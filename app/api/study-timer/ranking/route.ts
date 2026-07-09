@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     study_date: studyDate,
     server_now: now.toISOString(),
-    top5: users.filter((user) => user.total_seconds > 0).slice(0, 5),
+    top5: users.slice(0, 5),
     allUsers: users,
     users
   });

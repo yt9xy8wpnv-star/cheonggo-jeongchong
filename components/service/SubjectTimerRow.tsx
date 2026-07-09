@@ -56,14 +56,8 @@ export function SubjectTimerRow({
   onStop
 }: SubjectTimerRowProps) {
   const colors = subjectColorClasses[option.key];
-  const primaryLabel =
-    option.key === "inquiry_1" ||
-    option.key === "inquiry_2" ||
-    option.key === "second_language"
-      ? option.label
-      : option.title;
-  const secondaryLabel =
-    option.enabled && option.label !== primaryLabel ? option.label : "";
+  const primaryLabel = option.title;
+  const secondaryLabel = option.label;
 
   return (
     <div
@@ -105,7 +99,7 @@ export function SubjectTimerRow({
       </div>
 
       <p className="font-mono text-xl font-black text-brand-ink sm:text-right">
-        {option.enabled ? formatSeconds(seconds) : "미응시"}
+        {formatSeconds(seconds)}
       </p>
 
       {option.enabled ? (
@@ -124,7 +118,7 @@ export function SubjectTimerRow({
         </button>
       ) : (
         <span className="inline-flex min-w-20 justify-center rounded-md border border-brand-line bg-slate-50 px-4 py-2.5 text-sm font-black text-slate-400">
-          비활성
+          미응시
         </span>
       )}
     </div>

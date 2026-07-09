@@ -178,6 +178,7 @@ export function buildStudyRankingUsers(
   profiles.forEach((profile) => {
     usersById.set(profile.id, {
       user_id: profile.id,
+      rank: 0,
       name: profile.name,
       total_seconds: 0,
       korean_seconds: 0,
@@ -217,22 +218,28 @@ export function buildStudyRankingUsers(
     }
   });
 
-  return Array.from(usersById.values()).map((user) => ({
-    ...user,
-    korean_seconds: user.subject_totals_seconds.korean,
-    math_seconds: user.subject_totals_seconds.math,
-    english_seconds: user.subject_totals_seconds.english,
-    history_seconds: user.subject_totals_seconds.history,
-    inquiry_1_seconds: user.subject_totals_seconds.inquiry_1,
-    inquiry_2_seconds: user.subject_totals_seconds.inquiry_2,
-    second_language_seconds: user.subject_totals_seconds.second_language
-  })).sort((a, b) => {
-    if (b.total_seconds !== a.total_seconds) {
-      return b.total_seconds - a.total_seconds;
-    }
+  return Array.from(usersById.values())
+    .map((user) => ({
+      ...user,
+      korean_seconds: user.subject_totals_seconds.korean,
+      math_seconds: user.subject_totals_seconds.math,
+      english_seconds: user.subject_totals_seconds.english,
+      history_seconds: user.subject_totals_seconds.history,
+      inquiry_1_seconds: user.subject_totals_seconds.inquiry_1,
+      inquiry_2_seconds: user.subject_totals_seconds.inquiry_2,
+      second_language_seconds: user.subject_totals_seconds.second_language
+    }))
+    .sort((a, b) => {
+      if (b.total_seconds !== a.total_seconds) {
+        return b.total_seconds - a.total_seconds;
+      }
 
-    return a.name.localeCompare(b.name, "ko");
-  });
+      return a.name.localeCompare(b.name, "ko");
+    })
+    .map((user, index) => ({
+      ...user,
+      rank: index + 1
+    }));
 }
 
 export async function stopActiveStudySessions(

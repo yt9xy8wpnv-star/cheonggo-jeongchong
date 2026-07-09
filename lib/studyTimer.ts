@@ -33,6 +33,7 @@ export type StudyTimerMeResponse = {
 
 export type StudyRankingUser = {
   user_id: string;
+  rank: number;
   name: string;
   total_seconds: number;
   korean_seconds: number;
@@ -95,13 +96,13 @@ export function getStudySubjectOptions(
     {
       key: "english",
       title: "영어",
-      label: subjects.english_subject === "응시" ? "영어" : "미응시",
+      label: subjects.english_subject,
       enabled: subjects.english_subject === "응시"
     },
     {
       key: "history",
       title: "한국사",
-      label: "한국사",
+      label: "응시",
       enabled: true
     },
     {

@@ -1,5 +1,6 @@
 "use client";
 
+import { Trophy } from "lucide-react";
 import { formatSeconds } from "@/lib/time";
 import {
   getLiveSubjectTotals,
@@ -43,6 +44,8 @@ export function RankingTable({
     <>
       <div className="space-y-3 md:hidden">
         {users.map((user, index) => {
+          const rank = user.rank || index + 1;
+          const isFirst = rank === 1;
           const totals = getLiveSubjectTotals(
             user.subject_totals_seconds,
             user.active_session,
@@ -59,13 +62,25 @@ export function RankingTable({
           return (
             <article
               key={user.user_id}
-              className="rounded-xl border border-brand-line bg-white p-4"
+              className={[
+                "rounded-xl border p-4",
+                isFirst
+                  ? "border-amber-300 bg-amber-50/70 ring-1 ring-amber-100"
+                  : "border-brand-line bg-white"
+              ].join(" ")}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black text-brand-blue">
-                    {index + 1}위
-                  </p>
+                  {isFirst ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-black text-amber-800">
+                      <Trophy aria-hidden="true" className="h-3.5 w-3.5" />
+                      오늘의 1등
+                    </span>
+                  ) : (
+                    <p className="text-xs font-black text-brand-blue">
+                      {rank}위
+                    </p>
+                  )}
                   <h3 className="mt-1 text-lg font-black text-brand-ink">
                     {user.name}
                   </h3>
@@ -111,6 +126,8 @@ export function RankingTable({
           </thead>
           <tbody className="divide-y divide-brand-line">
             {users.map((user, index) => {
+              const rank = user.rank || index + 1;
+              const isFirst = rank === 1;
               const totals = getLiveSubjectTotals(
                 user.subject_totals_seconds,
                 user.active_session,
@@ -125,11 +142,36 @@ export function RankingTable({
               );
 
               return (
-                <tr key={user.user_id} className="text-brand-ink">
-                  <td className="px-4 py-4 font-black text-brand-blue">
-                    {index + 1}
+                <tr
+                  key={user.user_id}
+                  className={[
+                    "text-brand-ink",
+                    isFirst ? "bg-amber-50/70 ring-1 ring-inset ring-amber-200" : ""
+                  ].join(" ")}
+                >
+                  <td
+                    className={[
+                      "px-4 py-4 font-black text-brand-blue",
+                      isFirst ? "border-l-4 border-amber-300" : "border-l-4 border-transparent"
+                    ].join(" ")}
+                  >
+                    {isFirst ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-black text-amber-800">
+                        <Trophy aria-hidden="true" className="h-3.5 w-3.5" />
+                        1위
+                      </span>
+                    ) : (
+                      rank
+                    )}
                   </td>
-                  <td className="px-4 py-4 font-black">{user.name}</td>
+                  <td className="px-4 py-4 font-black">
+                    {user.name}
+                    {isFirst ? (
+                      <span className="ml-2 align-middle text-xs font-black text-amber-800">
+                        오늘의 1등
+                      </span>
+                    ) : null}
+                  </td>
                   <td className="px-4 py-4 font-mono font-black">
                     {formatSeconds(totalSeconds)}
                   </td>

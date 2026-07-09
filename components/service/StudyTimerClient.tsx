@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, Clock3, RefreshCw } from "lucide-react";
+import { AlertTriangle, Clock3, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ResetTodayModal } from "@/components/service/ResetTodayModal";
 import { StudyRanking } from "@/components/service/StudyRanking";
 import { SubjectTimerRow } from "@/components/service/SubjectTimerRow";
 import { getSupabaseBrowserClient, getSupabaseConfigMessage } from "@/lib/supabase/client";
@@ -24,7 +25,7 @@ type ApiResult<T> =
   | { ok: false; message: string; status: number };
 
 type MutationResponse = {
-  message: string;
+  message?: string;
   snapshot: StudyTimerMeResponse;
 };
 
@@ -89,6 +90,8 @@ export function StudyTimerClient() {
   const [approvalStatus, setApprovalStatus] = useState<ProfileStatus | null>(null);
   const [message, setMessage] = useState("");
   const [busySubject, setBusySubject] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
   const [rankingLoading, setRankingLoading] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
@@ -314,7 +317,6 @@ export function StudyTimerClient() {
     }
 
     setMyTimerData(result.data.snapshot);
-    setMessage(result.data.message);
     void loadRanking();
   };
 
@@ -340,7 +342,33 @@ export function StudyTimerClient() {
     }
 
     setMyTimerData(result.data.snapshot);
-    setMessage(result.data.message);
+    void loadRanking();
+  };
+
+  const handleResetToday = async () => {
+    if (!authToken) {
+      return;
+    }
+
+    setResetting(true);
+    setMessage("");
+
+    const result = await apiRequest<MutationResponse>(
+      authToken,
+      "/api/study-timer/reset-today",
+      { method: "POST" }
+    );
+
+    setResetting(false);
+
+    if (!result.ok) {
+      setResetModalOpen(false);
+      setMessage(result.message);
+      return;
+    }
+
+    setResetModalOpen(false);
+    setMyTimerData(result.data.snapshot);
     void loadRanking();
   };
 
@@ -423,77 +451,72 @@ export function StudyTimerClient() {
 
   return (
     <div className="space-y-8">
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-xl border border-brand-line bg-white p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-sm font-bold text-brand-blue">
-                {myTimerData.profile_name} · {myTimerData.study_date}
-              </p>
-              <h2 className="mt-2 text-2xl font-black text-brand-ink">
-                오늘의 순공 시간
-              </h2>
-              <p className="mt-4 font-mono text-5xl font-black text-brand-ink sm:text-6xl">
-                {formatSeconds(liveTimer.totalSeconds)}
-              </p>
-            </div>
-            <div className="rounded-xl border border-brand-line bg-slate-50 px-4 py-3">
-              <p className="text-xs font-black text-brand-blue">기준</p>
-              <p className="mt-1 text-sm font-bold text-brand-muted">
-                오전 5시 기준 집계
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-xl border border-brand-line bg-slate-50 p-4">
-            <div className="flex items-start gap-3">
-              <Clock3 aria-hidden="true" className="mt-0.5 h-5 w-5 text-brand-blue" />
-              <div>
-                {myTimerData.active_session ? (
-                  <>
-                    <p className="font-black text-brand-ink">
-                      {myTimerData.active_session.subject_label} 공부 중 ·{" "}
-                      {formatSeconds(liveTimer.activeElapsed)} 진행 중
-                    </p>
-                    {activeLongWarning ? (
-                      <p className="mt-2 inline-flex items-center gap-1 text-sm font-black text-brand-red">
-                        <AlertTriangle aria-hidden="true" className="h-4 w-4" />
-                        {activeLongWarning}
-                      </p>
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="font-black text-brand-muted">
-                    현재 실행 중인 타이머가 없습니다.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {message ? (
-            <p className="mt-4 rounded-md bg-blue-50 px-4 py-3 text-sm font-black text-brand-blue">
-              {message}
+      <section className="rounded-xl border border-brand-line bg-white p-5 sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-bold text-brand-blue">
+              {myTimerData.profile_name} · {myTimerData.study_date}
             </p>
-          ) : null}
+            <h2 className="mt-2 text-2xl font-black text-brand-ink">
+              오늘의 순공 시간
+            </h2>
+            <p className="mt-4 font-mono text-5xl font-black text-brand-ink sm:text-6xl">
+              {formatSeconds(liveTimer.totalSeconds)}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={loadTimer}
+              className="focus-ring inline-flex items-center gap-2 rounded-md border border-brand-line px-4 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-50"
+            >
+              <RefreshCw aria-hidden="true" className="h-4 w-4" />
+              새로고침
+            </button>
+            <button
+              type="button"
+              onClick={() => setResetModalOpen(true)}
+              disabled={resetting}
+              className="focus-ring inline-flex items-center gap-2 rounded-md border border-red-200 px-4 py-2.5 text-sm font-black text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Trash2 aria-hidden="true" className="h-4 w-4" />
+              오늘 기록 초기화
+            </button>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-brand-line bg-white p-5 sm:p-6">
-          <p className="text-sm font-bold text-brand-blue">Guide</p>
-          <h2 className="mt-1 text-2xl font-black text-brand-ink">기록 방식</h2>
-          <p className="mt-4 text-sm leading-7 text-brand-muted">
-            시작과 정지 시점만 저장하고, 진행 중인 시간은 화면에서 실시간으로
-            계산합니다. 새로고침하거나 창을 내려도 실행 중 타이머는 유지됩니다.
-          </p>
-          <button
-            type="button"
-            onClick={loadTimer}
-            className="focus-ring mt-5 inline-flex items-center gap-2 rounded-md border border-brand-line px-4 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-50"
-          >
-            <RefreshCw aria-hidden="true" className="h-4 w-4" />
-            새로고침
-          </button>
+        <div className="mt-6 rounded-xl border border-brand-line bg-slate-50 p-4">
+          <div className="flex items-start gap-3">
+            <Clock3 aria-hidden="true" className="mt-0.5 h-5 w-5 text-brand-blue" />
+            <div>
+              {myTimerData.active_session ? (
+                <>
+                  <p className="font-black text-brand-ink">
+                    {myTimerData.active_session.subject_label} 공부 중 ·{" "}
+                    {formatSeconds(liveTimer.activeElapsed)}
+                  </p>
+                  {activeLongWarning ? (
+                    <p className="mt-2 inline-flex items-center gap-1 text-sm font-black text-brand-red">
+                      <AlertTriangle aria-hidden="true" className="h-4 w-4" />
+                      {activeLongWarning}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="font-black text-brand-muted">
+                  현재 실행 중인 타이머가 없습니다.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
+
+        {message ? (
+          <p className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm font-black text-brand-red">
+            {message}
+          </p>
+        ) : null}
       </section>
 
       <section className="rounded-xl border border-brand-line bg-white p-5 sm:p-6">
@@ -527,6 +550,17 @@ export function StudyTimerClient() {
         ranking={rankingData}
         now={now}
         loading={rankingLoading}
+      />
+
+      <p className="border-t border-brand-line pt-5 text-sm font-semibold leading-7 text-brand-muted">
+        하루 기준은 오전 5시입니다. 오전 5시부터 다음 날 오전 4시 59분까지의 기록이 같은 날짜로 집계됩니다.
+      </p>
+
+      <ResetTodayModal
+        open={resetModalOpen}
+        busy={resetting}
+        onClose={() => setResetModalOpen(false)}
+        onConfirm={handleResetToday}
       />
     </div>
   );

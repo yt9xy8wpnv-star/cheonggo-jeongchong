@@ -65,6 +65,8 @@ create table if not exists public.study_sessions (
   )
 );
 
+alter table public.study_sessions replica identity full;
+
 create index if not exists study_sessions_user_date_idx
 on public.study_sessions (user_id, study_date);
 

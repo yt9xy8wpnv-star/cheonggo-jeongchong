@@ -39,9 +39,6 @@ export function StudyRanking({ ranking, now, loading }: StudyRankingProps) {
           <h2 className="mt-1 text-2xl font-black text-brand-ink">
             오늘의 정시파이터 TOP 5
           </h2>
-          <p className="mt-2 text-sm leading-6 text-brand-muted">
-            오전 5시 기준 오늘 공부 시간을 바탕으로 집계됩니다.
-          </p>
         </div>
         {loading ? (
           <span className="text-xs font-black text-brand-blue">갱신 중</span>
