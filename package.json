@@ -1,0 +1,32 @@
+{
+  "name": "cheonggo-jeongchong",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "WATCHPACK_POLLING=true next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.1",
+    "lucide-react": "0.468.0",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "overrides": {
+    "postcss": "8.5.14"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "10.4.20",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.2.10",
+    "postcss": "8.5.14",
+    "tailwindcss": "3.4.17",
+    "typescript": "5.7.2"
+  }
+}
