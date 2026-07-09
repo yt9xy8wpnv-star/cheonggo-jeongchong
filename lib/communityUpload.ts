@@ -6,6 +6,13 @@ import {
 } from "@/lib/community";
 import type { CommunityPostImage } from "@/lib/supabase/types";
 
+type AnswerImageInsert = {
+  answer_id: string;
+  image_url: string;
+  storage_path: string;
+  order_index: number;
+};
+
 function getUploadFileExtension(file: File) {
   const fallbackByType: Record<string, string> = {
     "image/gif": "gif",
@@ -50,13 +57,15 @@ export async function uploadPostImages({
   files,
   postId,
   userId,
-  startOrderIndex = 0
+  startOrderIndex = 0,
+  pathPrefix = ""
 }: {
   client: SupabaseClient;
   files: File[];
   postId: string;
   userId: string;
   startOrderIndex?: number;
+  pathPrefix?: string;
 }) {
   if (files.length === 0) {
     return { ok: true as const, images: [] };
@@ -74,7 +83,7 @@ export async function uploadPostImages({
   for (let index = 0; index < files.length; index += 1) {
     const file = files[index];
     const extension = getUploadFileExtension(file);
-    const storagePath = `${userId}/${postId}/${Date.now()}-${index}.${extension}`;
+    const storagePath = `${pathPrefix}${userId}/${postId}/${Date.now()}-${index}.${extension}`;
     const { error: uploadError } = await client.storage
       .from(communityImageBucket)
       .upload(storagePath, file, {
@@ -116,6 +125,85 @@ export async function uploadPostImages({
     return {
       ok: false as const,
       message: "이미지 정보를 저장하지 못했습니다."
+    };
+  }
+
+  return { ok: true as const, images: uploadedImages };
+}
+
+export async function uploadAnswerImages({
+  client,
+  files,
+  answerId,
+  userId,
+  startOrderIndex = 0,
+  pathPrefix = "qna/answers/"
+}: {
+  client: SupabaseClient;
+  files: File[];
+  answerId: string;
+  userId: string;
+  startOrderIndex?: number;
+  pathPrefix?: string;
+}) {
+  if (files.length === 0) {
+    return { ok: true as const, images: [] };
+  }
+
+  const bucketResult = await ensureCommunityImageBucket(client);
+
+  if (!bucketResult.ok) {
+    return bucketResult;
+  }
+
+  const uploadedImages: AnswerImageInsert[] = [];
+  const uploadedPaths: string[] = [];
+
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    const extension = getUploadFileExtension(file);
+    const storagePath = `${pathPrefix}${userId}/${answerId}/${Date.now()}-${index}.${extension}`;
+    const { error: uploadError } = await client.storage
+      .from(communityImageBucket)
+      .upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) {
+      if (uploadedPaths.length > 0) {
+        await client.storage.from(communityImageBucket).remove(uploadedPaths);
+      }
+
+      return {
+        ok: false as const,
+        message: `이미지 업로드에 실패했습니다${getStorageErrorMessage(uploadError)}. Supabase Storage의 community-images 버킷 설정을 확인해 주세요.`
+      };
+    }
+
+    const {
+      data: { publicUrl }
+    } = client.storage.from(communityImageBucket).getPublicUrl(storagePath);
+
+    uploadedPaths.push(storagePath);
+    uploadedImages.push({
+      answer_id: answerId,
+      image_url: publicUrl,
+      storage_path: storagePath,
+      order_index: startOrderIndex + index
+    });
+  }
+
+  const { error: imageInsertError } = await client
+    .from("community_answer_images")
+    .insert(uploadedImages);
+
+  if (imageInsertError) {
+    await client.storage.from(communityImageBucket).remove(uploadedPaths);
+
+    return {
+      ok: false as const,
+      message: "답변 이미지 정보를 저장하지 못했습니다."
     };
   }
 

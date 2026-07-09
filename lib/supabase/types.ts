@@ -103,11 +103,11 @@ export type CommunityComment = {
   deleted_at: string | null;
 };
 
-export type CommunityReactionType = "like" | "dislike";
+export type CommunityReactionType = "like" | "dislike" | "helpful";
 
 export type CommunityReaction = {
   id: string;
-  target_type: "post" | "comment";
+  target_type: "post" | "comment" | "answer";
   target_id: string;
   user_id: string;
   reaction_type: CommunityReactionType;
@@ -139,4 +139,74 @@ export type CommunityStudyCertification = {
   is_rank_1: boolean;
   rank_total_users: number | null;
   created_at: string;
+};
+
+export type QnaQuestionStatus = "waiting" | "answered" | "accepted";
+
+export type CommunityQuestion = {
+  id: string;
+  post_id: string;
+  subject_area: string;
+  subject_detail: string;
+  question_status: QnaQuestionStatus;
+  accepted_answer_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommunityAnswer = {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  status: CommunityStatus;
+  is_accepted: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+export type CommunityAnswerImage = {
+  id: string;
+  answer_id: string;
+  image_url: string;
+  storage_path: string;
+  order_index: number;
+  created_at: string;
+};
+
+export type PoliceReportType =
+  | "post_comment"
+  | "early_admission_behavior"
+  | "study_disruption"
+  | "delivery_behavior"
+  | "other";
+
+export type PoliceTargetType = "post" | "comment" | "answer";
+
+export type PoliceReportStatus =
+  | "received"
+  | "reviewing"
+  | "resolved"
+  | "rejected";
+
+export type PoliceReport = {
+  id: string;
+  reporter_id: string | null;
+  report_type: PoliceReportType;
+  target_type: PoliceTargetType | null;
+  target_id: string | null;
+  target_label: string | null;
+  target_author_name: string | null;
+  accused_name: string | null;
+  reason: string;
+  detail: string;
+  image_url: string | null;
+  storage_path: string | null;
+  status: PoliceReportStatus;
+  admin_note: string | null;
+  handled_by: string | null;
+  handled_at: string | null;
+  created_at: string;
+  updated_at: string;
 };

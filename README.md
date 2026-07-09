@@ -18,7 +18,7 @@ npm run dev
 - `components/common/`: 공통 UI 컴포넌트
 - `components/mock/`: 모의고사 관련 UI
 - `components/service/`: 정시타이머, 캘린더 등 서비스 UI
-- `components/community/`: 자유게시판 UI
+- `components/community/`: 커뮤니티 게시판 UI
 - `lib/data.ts`: 공지, 게시글, 모의고사, 상품, 일정 등 mock data
 - `public/assets/`: 추후 로고 에셋을 넣을 위치
 
@@ -44,7 +44,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 `SUPABASE_SERVICE_ROLE_KEY`는 서버 라우트에서만 사용하며 클라이언트 컴포넌트에 노출하지 않습니다.
 
-Supabase SQL Editor에서 `supabase/schema.sql`을 실행해 `profiles`, `subject_preferences`, `study_sessions`, 자유게시판 테이블, RLS 정책, RPC 함수를 생성합니다.
+Supabase SQL Editor에서 `supabase/schema.sql`을 실행해 `profiles`, `subject_preferences`, `study_sessions`, 커뮤니티 테이블, RLS 정책, RPC 함수를 생성합니다.
 
 ## 자유게시판
 
@@ -67,6 +67,15 @@ Public bucket: on
 
 이미지는 API에서 승인된 회원 요청만 업로드하며, 파일당 5MB 이하 jpg/png/webp/gif만 허용합니다.
 
+정시파출소 신고 이미지 첨부를 사용하려면 별도 public bucket을 생성합니다.
+
+```txt
+Bucket name: police-report-images
+Public bucket: on
+```
+
+정시파출소 신고는 `/service/police`에서 접수하며, 승인된 회원만 사용할 수 있습니다. 신고 데이터는 `police_reports` 테이블에 저장되고, 이미지는 신고당 최대 1장까지 첨부할 수 있습니다.
+
 ## 공부 인증
 
 `/community/study`는 자유게시판과 같은 게시판 UI를 사용하되 `community_posts.board_type = 'study'`로 저장합니다.
@@ -77,6 +86,18 @@ Public bucket: on
 - 글 작성 이후 공부 시간이 늘어나도 기존 인증 글의 공부 시간은 바뀌지 않습니다.
 - 인증 당시 1등이면 목록과 인증 카드에 금색 강조가 적용됩니다.
 - 제목은 최대 100자, 본문은 최대 200자입니다.
+
+## 질문 게시판
+
+`/community/qna`는 `community_posts.board_type = 'qna'` 질문과 `community_questions`, `community_answers`, `community_answer_images` 테이블을 사용합니다.
+
+- 라우트는 `/community/qna`, `/community/qna/write`, `/community/qna/[id]`, `/community/qna/[id]/edit`입니다.
+- 질문 작성 시 과목 영역과 세부 과목을 반드시 선택합니다.
+- 질문 이미지는 `community_post_images`, 답변 이미지는 `community_answer_images`에 저장합니다.
+- 답변 채택은 질문 작성자만 할 수 있으며, 채택되면 질문 상태가 `채택 완료`로 표시됩니다.
+- 질문에는 좋아요, 답변에는 도움돼요 반응을 사용합니다.
+- 제목은 최대 120자, 질문 내용은 최대 2000자, 답변은 최대 3000자입니다.
+- 이미지 첨부는 `community-images` public bucket을 사용하며, 파일당 5MB 이하 jpg/png/webp/gif만 허용합니다.
 
 ## 정시타이머
 

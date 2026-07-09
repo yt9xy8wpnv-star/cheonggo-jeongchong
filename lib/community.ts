@@ -3,14 +3,17 @@ import type {
   CommunityComment,
   CommunityPost,
   CommunityPostImage,
+  CommunityQuestion,
   CommunityReaction,
   CommunityReactionType,
   CommunityStudyCertification,
+  CommunityAnswerImage,
   Profile
 } from "@/lib/supabase/types";
 
 export const freeBoardType = "free";
 export const studyBoardType = "study";
+export const qnaBoardType = "qna";
 export const communityImageBucket = "community-images";
 export const maxPostImageCount = 5;
 export const maxPostImageSize = 5 * 1024 * 1024;
@@ -41,6 +44,25 @@ export const studySortOptions = [
 ] as const;
 
 export type StudySort = (typeof studySortOptions)[number]["value"];
+
+export const qnaStatusOptions = [
+  { value: "all", label: "전체" },
+  { value: "waiting", label: "답변 대기" },
+  { value: "answered", label: "답변 완료" },
+  { value: "accepted", label: "채택 완료" }
+] as const;
+
+export type QnaStatusFilter = (typeof qnaStatusOptions)[number]["value"];
+
+export const qnaSortOptions = [
+  { value: "latest", label: "최신순" },
+  { value: "unanswered", label: "미해결 우선" },
+  { value: "answers", label: "답변 많은 순" },
+  { value: "views", label: "조회수 순" },
+  { value: "helpful", label: "도움 많은 순" }
+] as const;
+
+export type QnaSort = (typeof qnaSortOptions)[number]["value"];
 
 export type CommunityPostListItem = {
   id: string;
@@ -88,6 +110,28 @@ export type StudyPostListItem = CommunityPostListItem & {
   certification: StudyCertificationView | null;
 };
 
+export type QnaQuestionView = Pick<
+  CommunityQuestion,
+  | "id"
+  | "post_id"
+  | "subject_area"
+  | "subject_detail"
+  | "question_status"
+  | "accepted_answer_id"
+  | "created_at"
+  | "updated_at"
+>;
+
+export type QnaPostListItem = Omit<
+  CommunityPostListItem,
+  "comment_count" | "dislike_count"
+> & {
+  answer_count: number;
+  helpful_count: number;
+  like_count: number;
+  question: QnaQuestionView | null;
+};
+
 export type CommunityPagination = {
   page: number;
   page_size: number;
@@ -128,6 +172,33 @@ export type StudyPostDetail = CommunityPostDetail & {
   certification: StudyCertificationView | null;
 };
 
+export type QnaAnswerView = {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  author_name: string;
+  created_at: string;
+  updated_at: string;
+  is_accepted: boolean;
+  helpful_count: number;
+  my_helpful: boolean;
+  can_delete: boolean;
+  images: CommunityAnswerImage[];
+};
+
+export type QnaPostDetail = Omit<
+  CommunityPostDetail,
+  "comment_count" | "comments" | "dislike_count" | "my_reaction"
+> & {
+  answer_count: number;
+  helpful_count: number;
+  question: QnaQuestionView | null;
+  answers: QnaAnswerView[];
+  my_like: boolean;
+  can_accept_answer: boolean;
+};
+
 export type CommunityPostsResponse = {
   posts: CommunityPostListItem[];
   pagination: CommunityPagination;
@@ -148,12 +219,28 @@ export type StudyPostsResponse = {
   sort: StudySort;
 };
 
+export type QnaPostsResponse = {
+  posts: QnaPostListItem[];
+  pagination: CommunityPagination;
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  q: string;
+  status: QnaStatusFilter;
+  subjectArea: string;
+  sort: QnaSort;
+};
+
 export type CommunityPostDetailResponse = {
   post: CommunityPostDetail;
 };
 
 export type StudyPostDetailResponse = {
   post: StudyPostDetail;
+};
+
+export type QnaPostDetailResponse = {
+  post: QnaPostDetail;
 };
 
 export type StudyCertificationPreviewResponse = {
@@ -176,6 +263,18 @@ export function normalizeStudySort(value: string | null): StudySort {
   return studySortOptions.some((option) => option.value === value)
     ? (value as StudySort)
     : "latest";
+}
+
+export function normalizeQnaSort(value: string | null): QnaSort {
+  return qnaSortOptions.some((option) => option.value === value)
+    ? (value as QnaSort)
+    : "latest";
+}
+
+export function normalizeQnaStatus(value: string | null): QnaStatusFilter {
+  return qnaStatusOptions.some((option) => option.value === value)
+    ? (value as QnaStatusFilter)
+    : "all";
 }
 
 export function normalizePage(value: string | null) {
@@ -229,6 +328,57 @@ export function validateStudyPostInput(title: string, content: string) {
     return {
       ok: false,
       message: "본문은 2자 이상 200자 이하로 입력해 주세요."
+    };
+  }
+
+  return { ok: true, message: "" };
+}
+
+export function validateQnaQuestionInput({
+  title,
+  content,
+  subjectArea,
+  subjectDetail
+}: {
+  title: string;
+  content: string;
+  subjectArea: string;
+  subjectDetail: string;
+}) {
+  const trimmedTitle = title.trim();
+  const trimmedContent = content.trim();
+
+  if (trimmedTitle.length < 2 || trimmedTitle.length > 120) {
+    return {
+      ok: false,
+      message: "제목은 2자 이상 120자 이하로 입력해 주세요."
+    };
+  }
+
+  if (trimmedContent.length < 2 || trimmedContent.length > 2000) {
+    return {
+      ok: false,
+      message: "질문 내용은 2자 이상 2000자 이하로 입력해 주세요."
+    };
+  }
+
+  if (!subjectArea || !subjectDetail) {
+    return {
+      ok: false,
+      message: "과목 영역과 세부 과목을 선택해 주세요."
+    };
+  }
+
+  return { ok: true, message: "" };
+}
+
+export function validateQnaAnswerInput(content: string) {
+  const trimmedContent = content.trim();
+
+  if (trimmedContent.length < 2 || trimmedContent.length > 3000) {
+    return {
+      ok: false,
+      message: "답변은 2자 이상 3000자 이하로 입력해 주세요."
     };
   }
 
@@ -445,6 +595,41 @@ export function sortStudyPostsWithCounts(
   });
 }
 
+export function sortQnaPosts(posts: QnaPostListItem[], sort: QnaSort) {
+  const byDate = (a: QnaPostListItem, b: QnaPostListItem) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+
+  return [...posts].sort((a, b) => {
+    if (a.is_pinned !== b.is_pinned) {
+      return a.is_pinned ? -1 : 1;
+    }
+
+    if (sort === "unanswered") {
+      const waitingA = a.question?.question_status === "waiting" ? 1 : 0;
+      const waitingB = b.question?.question_status === "waiting" ? 1 : 0;
+      return waitingB - waitingA || byDate(a, b);
+    }
+
+    if (sort === "answers") {
+      return b.answer_count - a.answer_count || byDate(a, b);
+    }
+
+    if (sort === "views") {
+      return b.view_count - a.view_count || byDate(a, b);
+    }
+
+    if (sort === "helpful") {
+      return (
+        b.helpful_count - a.helpful_count ||
+        b.like_count - a.like_count ||
+        byDate(a, b)
+      );
+    }
+
+    return byDate(a, b);
+  });
+}
+
 export function toPostListItem({
   post,
   authorName,
@@ -497,5 +682,38 @@ export function toStudyPostListItem({
       imageCount
     }),
     certification
+  };
+}
+
+export function toQnaPostListItem({
+  post,
+  authorName,
+  answerCount,
+  helpfulCount,
+  likeCount,
+  imageCount,
+  question
+}: {
+  post: CommunityPost;
+  authorName: string;
+  answerCount: number;
+  helpfulCount: number;
+  likeCount: number;
+  imageCount: number;
+  question: QnaQuestionView | null;
+}): QnaPostListItem {
+  return {
+    id: post.id,
+    title: post.title,
+    author_name: authorName,
+    created_at: post.created_at,
+    updated_at: post.updated_at,
+    view_count: post.view_count,
+    answer_count: answerCount,
+    helpful_count: helpfulCount,
+    like_count: likeCount,
+    image_count: imageCount,
+    is_pinned: post.is_pinned,
+    question
   };
 }
