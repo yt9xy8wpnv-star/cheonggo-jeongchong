@@ -55,6 +55,42 @@ export async function getProfileFromAuthHeader(request: Request) {
   return { client, user: user as User, profile, error: null, status: 200 };
 }
 
+export async function getOptionalProfileFromAuthHeader(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const { client, error } = getSupabaseAdminClient();
+
+  if (!client) {
+    return { client: null, user: null, profile: null, error, status: 500 };
+  }
+
+  if (!token) {
+    return { client, user: null, profile: null, error: null, status: 200 };
+  }
+
+  const {
+    data: { user }
+  } = await client.auth.getUser(token);
+
+  if (!user) {
+    return { client, user: null, profile: null, error: null, status: 200 };
+  }
+
+  const { data: profile } = await client
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle<Profile>();
+
+  return {
+    client,
+    user: user as User,
+    profile: profile ?? null,
+    error: null,
+    status: 200
+  };
+}
+
 export async function requireApprovedAdminFromRequest(request: Request) {
   const context = await getProfileFromAuthHeader(request);
 

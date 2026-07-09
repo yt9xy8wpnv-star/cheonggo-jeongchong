@@ -67,6 +67,97 @@ create table if not exists public.study_sessions (
 
 alter table public.study_sessions replica identity full;
 
+create table if not exists public.community_posts (
+  id uuid primary key default gen_random_uuid(),
+  board_type text not null default 'free',
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  title text not null,
+  content text not null,
+  status text not null default 'published',
+  is_pinned boolean not null default false,
+  view_count integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz null,
+  constraint community_posts_board_type_check check (
+    board_type in ('free', 'study', 'qna', 'resources', 'reviews')
+  ),
+  constraint community_posts_status_check check (
+    status in ('published', 'hidden', 'deleted')
+  ),
+  constraint community_posts_title_length_check check (
+    char_length(title) between 2 and 200
+  ),
+  constraint community_posts_content_length_check check (
+    char_length(content) between 2 and 5000
+  ),
+  constraint community_posts_view_count_check check (view_count >= 0)
+);
+
+create table if not exists public.community_post_images (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.community_posts(id) on delete cascade,
+  image_url text not null,
+  storage_path text not null,
+  order_index integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.community_comments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.community_posts(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  parent_id uuid null references public.community_comments(id) on delete cascade,
+  content text not null,
+  status text not null default 'published',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz null,
+  constraint community_comments_status_check check (
+    status in ('published', 'hidden', 'deleted')
+  ),
+  constraint community_comments_content_length_check check (
+    char_length(content) between 1 and 2000
+  )
+);
+
+create table if not exists public.community_reactions (
+  id uuid primary key default gen_random_uuid(),
+  target_type text not null,
+  target_id uuid not null,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  reaction_type text not null,
+  created_at timestamptz not null default now(),
+  constraint community_reactions_target_type_check check (
+    target_type in ('post', 'comment')
+  ),
+  constraint community_reactions_reaction_type_check check (
+    reaction_type in ('like', 'dislike')
+  ),
+  constraint community_reactions_unique_target unique (
+    target_type,
+    target_id,
+    user_id
+  )
+);
+
+create table if not exists public.community_reports (
+  id uuid primary key default gen_random_uuid(),
+  target_type text not null,
+  target_id uuid not null,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  reason text not null,
+  status text not null default 'pending',
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz null,
+  constraint community_reports_target_type_check check (
+    target_type in ('post', 'comment')
+  ),
+  constraint community_reports_status_check check (
+    status in ('pending', 'resolved', 'rejected')
+  )
+);
+
 create index if not exists study_sessions_user_date_idx
 on public.study_sessions (user_id, study_date);
 
@@ -76,6 +167,24 @@ on public.study_sessions (study_date);
 create index if not exists study_sessions_active_idx
 on public.study_sessions (user_id, ended_at)
 where ended_at is null;
+
+create index if not exists community_posts_board_status_created_idx
+on public.community_posts (board_type, status, created_at desc);
+
+create index if not exists community_posts_user_idx
+on public.community_posts (user_id);
+
+create index if not exists community_posts_view_count_idx
+on public.community_posts (view_count desc);
+
+create index if not exists community_comments_post_created_idx
+on public.community_comments (post_id, created_at);
+
+create index if not exists community_reactions_target_idx
+on public.community_reactions (target_type, target_id);
+
+create index if not exists community_post_images_post_idx
+on public.community_post_images (post_id, order_index);
 
 do $$
 begin
@@ -115,6 +224,20 @@ before update on public.study_sessions
 for each row
 execute function public.set_updated_at();
 
+drop trigger if exists community_posts_set_updated_at on public.community_posts;
+
+create trigger community_posts_set_updated_at
+before update on public.community_posts
+for each row
+execute function public.set_updated_at();
+
+drop trigger if exists community_comments_set_updated_at on public.community_comments;
+
+create trigger community_comments_set_updated_at
+before update on public.community_comments
+for each row
+execute function public.set_updated_at();
+
 create or replace function public.is_admin()
 returns boolean
 language sql
@@ -149,6 +272,11 @@ grant execute on function public.is_admin() to authenticated;
 alter table public.profiles enable row level security;
 alter table public.subject_preferences enable row level security;
 alter table public.study_sessions enable row level security;
+alter table public.community_posts enable row level security;
+alter table public.community_post_images enable row level security;
+alter table public.community_comments enable row level security;
+alter table public.community_reactions enable row level security;
+alter table public.community_reports enable row level security;
 
 drop policy if exists profiles_select_self_or_admin on public.profiles;
 create policy profiles_select_self_or_admin
@@ -212,6 +340,147 @@ on public.study_sessions
 for update
 using (user_id = auth.uid() or public.is_admin())
 with check (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists community_posts_select_published on public.community_posts;
+create policy community_posts_select_published
+on public.community_posts
+for select
+using (status = 'published' or user_id = auth.uid() or public.is_admin());
+
+drop policy if exists community_posts_insert_approved_self on public.community_posts;
+create policy community_posts_insert_approved_self
+on public.community_posts
+for insert
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and status = 'approved'
+  )
+);
+
+drop policy if exists community_posts_update_self_or_admin on public.community_posts;
+create policy community_posts_update_self_or_admin
+on public.community_posts
+for update
+using (user_id = auth.uid() or public.is_admin())
+with check (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists community_post_images_select_published_post on public.community_post_images;
+create policy community_post_images_select_published_post
+on public.community_post_images
+for select
+using (
+  exists (
+    select 1
+    from public.community_posts
+    where id = post_id
+      and status = 'published'
+  )
+);
+
+drop policy if exists community_post_images_insert_owner on public.community_post_images;
+create policy community_post_images_insert_owner
+on public.community_post_images
+for insert
+with check (
+  exists (
+    select 1
+    from public.community_posts
+    where id = post_id
+      and user_id = auth.uid()
+  )
+);
+
+drop policy if exists community_post_images_delete_owner_or_admin on public.community_post_images;
+create policy community_post_images_delete_owner_or_admin
+on public.community_post_images
+for delete
+using (
+  public.is_admin()
+  or exists (
+    select 1
+    from public.community_posts
+    where id = post_id
+      and user_id = auth.uid()
+  )
+);
+
+drop policy if exists community_comments_select_published on public.community_comments;
+create policy community_comments_select_published
+on public.community_comments
+for select
+using (status = 'published' or user_id = auth.uid() or public.is_admin());
+
+drop policy if exists community_comments_insert_approved_self on public.community_comments;
+create policy community_comments_insert_approved_self
+on public.community_comments
+for insert
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and status = 'approved'
+  )
+);
+
+drop policy if exists community_comments_update_self_or_admin on public.community_comments;
+create policy community_comments_update_self_or_admin
+on public.community_comments
+for update
+using (user_id = auth.uid() or public.is_admin())
+with check (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists community_reactions_select_all on public.community_reactions;
+create policy community_reactions_select_all
+on public.community_reactions
+for select
+using (true);
+
+drop policy if exists community_reactions_insert_approved_self on public.community_reactions;
+create policy community_reactions_insert_approved_self
+on public.community_reactions
+for insert
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and status = 'approved'
+  )
+);
+
+drop policy if exists community_reactions_update_self on public.community_reactions;
+create policy community_reactions_update_self
+on public.community_reactions
+for update
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+drop policy if exists community_reactions_delete_self on public.community_reactions;
+create policy community_reactions_delete_self
+on public.community_reactions
+for delete
+using (user_id = auth.uid());
+
+drop policy if exists community_reports_insert_approved_self on public.community_reports;
+create policy community_reports_insert_approved_self
+on public.community_reports
+for insert
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and status = 'approved'
+  )
+);
 
 -- 회원가입 생성은 Next.js 서버 라우트에서 service role key로 처리합니다.
 -- 실제 배포 전에는 Supabase Dashboard에서 RLS 정책과 service role key 보관 상태를 다시 확인하세요.

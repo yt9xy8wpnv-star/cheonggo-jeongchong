@@ -58,3 +58,58 @@ export type StudySession = {
   created_at: string;
   updated_at: string;
 };
+
+export type CommunityBoardType =
+  | "free"
+  | "study"
+  | "qna"
+  | "resources"
+  | "reviews";
+
+export type CommunityStatus = "published" | "hidden" | "deleted";
+
+export type CommunityPost = {
+  id: string;
+  board_type: CommunityBoardType;
+  user_id: string;
+  title: string;
+  content: string;
+  status: CommunityStatus;
+  is_pinned: boolean;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+export type CommunityPostImage = {
+  id: string;
+  post_id: string;
+  image_url: string;
+  storage_path: string;
+  order_index: number;
+  created_at: string;
+};
+
+export type CommunityComment = {
+  id: string;
+  post_id: string;
+  user_id: string;
+  parent_id: string | null;
+  content: string;
+  status: CommunityStatus;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+export type CommunityReactionType = "like" | "dislike";
+
+export type CommunityReaction = {
+  id: string;
+  target_type: "post" | "comment";
+  target_id: string;
+  user_id: string;
+  reaction_type: CommunityReactionType;
+  created_at: string;
+};

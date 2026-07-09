@@ -1,6 +1,6 @@
 # 청주고정시파이터총연맹 공식 홈페이지
 
-Next.js App Router, TypeScript, Tailwind CSS로 제작한 청고정총 공식 홈페이지 목업입니다. Vercel 배포를 기준으로 구성되어 있으며, 현재 데이터는 `lib/data.ts`의 mock data를 사용합니다.
+Next.js App Router, TypeScript, Tailwind CSS로 제작한 청고정총 공식 홈페이지입니다. Vercel 배포와 Supabase 연동을 기준으로 구성되어 있습니다.
 
 ## 실행 방법
 
@@ -18,6 +18,7 @@ npm run dev
 - `components/common/`: 공통 UI 컴포넌트
 - `components/mock/`: 모의고사 관련 UI
 - `components/service/`: 정시타이머, 캘린더 등 서비스 UI
+- `components/community/`: 자유게시판 UI
 - `lib/data.ts`: 공지, 게시글, 모의고사, 상품, 일정 등 mock data
 - `public/assets/`: 추후 로고 에셋을 넣을 위치
 
@@ -43,7 +44,28 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 `SUPABASE_SERVICE_ROLE_KEY`는 서버 라우트에서만 사용하며 클라이언트 컴포넌트에 노출하지 않습니다.
 
-Supabase SQL Editor에서 `supabase/schema.sql`을 실행해 `profiles`, `subject_preferences`, `study_sessions`, RLS 정책, RPC 함수를 생성합니다.
+Supabase SQL Editor에서 `supabase/schema.sql`을 실행해 `profiles`, `subject_preferences`, `study_sessions`, 자유게시판 테이블, RLS 정책, RPC 함수를 생성합니다.
+
+## 자유게시판
+
+`/community/free`는 Supabase의 `community_posts`, `community_post_images`, `community_comments`, `community_reactions` 테이블을 사용합니다.
+
+- 게시글과 댓글 작성은 승인된 회원만 가능합니다.
+- 게시글과 댓글 삭제는 실제 삭제가 아니라 `status = deleted`로 숨김 처리합니다.
+- 작성자는 본인 게시글을 수정/삭제할 수 있고, 관리자는 전체 게시글과 댓글을 삭제할 수 있습니다.
+- 목록은 제목 검색, 최신순/인기순/댓글순/조회순/좋아요순 정렬, 이전/다음 페이지 이동을 지원합니다.
+- 라우트는 `/community/free`, `/community/free/write`, `/community/free/[id]`, `/community/free/[id]/edit`입니다.
+- 제목은 최대 200자, 본문은 최대 5000자까지 입력할 수 있습니다.
+- 목록에서는 본문 미리보기를 표시하지 않고 제목과 메타 정보만 보여줍니다.
+
+이미지 첨부를 사용하려면 Supabase Dashboard → Storage에서 public bucket을 생성합니다.
+
+```txt
+Bucket name: community-images
+Public bucket: on
+```
+
+이미지는 API에서 승인된 회원 요청만 업로드하며, 파일당 5MB 이하 jpg/png/webp/gif만 허용합니다.
 
 ## 정시타이머
 
