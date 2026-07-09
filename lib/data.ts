@@ -466,7 +466,7 @@ export const resources = [
 
 export const organizationUnits = [
   {
-    name: "대표자",
+    name: "대표",
     role: "운영 방향 총괄, 대외 공지 승인"
   },
   {

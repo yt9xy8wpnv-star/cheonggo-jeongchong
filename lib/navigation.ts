@@ -26,7 +26,7 @@ export const mainMenuGroups: MainMenuGroup[] = [
     active: ["/about", "/leader", "/organization", "/location"],
     items: [
       { title: "청고정총 소개", href: "/about" },
-      { title: "대표자소개", href: "/leader" },
+      { title: "대표 소개", href: "/leader" },
       { title: "조직도", href: "/organization" },
       { title: "오시는 길", href: "/location" }
     ]

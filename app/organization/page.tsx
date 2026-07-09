@@ -8,7 +8,7 @@ export default function OrganizationPage() {
       <PageHero
         eyebrow="Organization"
         title="조직도"
-        description="대표자와 운영진을 중심으로 모의고사, 커뮤니티, 굿즈, 자료, 정시파출소 업무를 나누어 관리합니다."
+        description="대표와 운영진을 중심으로 모의고사, 커뮤니티, 굿즈, 자료, 정시파출소 업무를 나누어 관리합니다."
       />
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
