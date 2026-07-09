@@ -10,6 +10,13 @@ export type MainMenuGroup = {
   }>;
 };
 
+export const utilityMenuLinks = [
+  { title: "동문회", href: "/alumni" },
+  { title: "FAQ", href: "/faq" },
+  { title: "발전기금", href: "/fund" },
+  { title: "입시 결과", href: "/admission-results" }
+];
+
 export const mainMenuGroups: MainMenuGroup[] = [
   {
     key: "about",
@@ -78,12 +85,13 @@ export const mainMenuGroups: MainMenuGroup[] = [
   {
     key: "mypage",
     title: "마이페이지",
-    description: "개인 페이지, 로그인, 관리자 화면으로 이동합니다.",
+    description: "개인 페이지, 선택과목, 가입 관리, 관리자 화면으로 이동합니다.",
     href: "/mypage",
-    active: ["/mypage", "/login", "/admin"],
+    active: ["/mypage", "/admin"],
     items: [
       { title: "마이페이지 홈", href: "/mypage" },
-      { title: "로그인", href: "/login" },
+      { title: "선택과목 수정", href: "/mypage/subjects" },
+      { title: "회원가입 관리", href: "/mypage/admin/signup-requests" },
       { title: "관리자", href: "/admin" }
     ]
   }

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { X, ArrowRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { notices } from "@/lib/data";
-import { mainMenuGroups } from "@/lib/navigation";
+import { mainMenuGroups, utilityMenuLinks } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 type MobileNavProps = {
@@ -54,13 +54,15 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 bg-brand-deep bg-cover bg-center text-white transition",
-        open ? "visible opacity-100" : "invisible opacity-0 pointer-events-none"
+        "fixed inset-0 z-50 bg-brand-deep bg-cover bg-center text-white transition-all duration-[450ms] ease-out motion-reduce:transform-none motion-reduce:transition-none",
+        open
+          ? "visible translate-y-0 opacity-100"
+          : "invisible pointer-events-none -translate-y-12 opacity-0"
       )}
       aria-hidden={!open}
       style={{
         backgroundImage:
-          "linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), url('/assets/main/numbers-bg.png')"
+          "linear-gradient(rgba(10, 20, 45, 0.78), rgba(10, 20, 45, 0.82)), url('/assets/menu/menu-bg.png')"
       }}
     >
       <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
@@ -69,16 +71,16 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             aria-label="전체 메뉴 빠른 이동"
             className="hidden flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-white/75 md:flex"
           >
-            {mainMenuGroups.map((group, index) => (
-              <span key={group.key} className="inline-flex items-center gap-5">
-                <button
-                  type="button"
-                  onClick={() => setActiveKey(group.key)}
+            {utilityMenuLinks.map((item, index) => (
+              <span key={item.href} className="inline-flex items-center gap-5">
+                <Link
+                  href={item.href}
+                  onClick={onClose}
                   className="focus-ring hover:text-white"
                 >
-                  {group.title}
-                </button>
-                {index < mainMenuGroups.length - 1 ? (
+                  {item.title}
+                </Link>
+                {index < utilityMenuLinks.length - 1 ? (
                   <span className="text-white/45">·</span>
                 ) : null}
               </span>
@@ -100,7 +102,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
         <div className="grid flex-1 gap-8 overflow-y-auto py-10 md:py-14 lg:grid-cols-[250px_minmax(0,1fr)_320px] lg:items-start lg:gap-14 xl:grid-cols-[280px_minmax(0,1fr)_340px]">
           <nav
             aria-label="주요 메뉴"
-            className="flex gap-2 overflow-x-auto pb-2 lg:block lg:space-y-7 lg:overflow-visible lg:pb-0"
+            className="animate-menu-panel flex gap-2 overflow-x-auto pb-2 motion-reduce:animate-none lg:block lg:space-y-7 lg:overflow-visible lg:pb-0"
           >
             {mainMenuGroups.map((group) => {
               const selected = group.key === activeGroup.key;
@@ -130,7 +132,10 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             })}
           </nav>
 
-          <section className="border-y border-white/15 py-8 lg:border-y-0 lg:border-l lg:py-0 lg:pl-12">
+          <section
+            key={activeGroup.key}
+            className="animate-menu-panel border-y border-white/15 py-8 motion-reduce:animate-none lg:border-y-0 lg:border-l lg:py-0 lg:pl-12"
+          >
             <h2 className="text-2xl font-black text-white sm:text-3xl">
               {activeGroup.title}
             </h2>
@@ -163,7 +168,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             </div>
           </section>
 
-          <aside className="hidden space-y-3 xl:block">
+          <aside className="hidden animate-menu-panel space-y-3 motion-reduce:animate-none xl:block">
             {notices.slice(0, 2).map((notice) => (
               <Link
                 key={notice.id}
