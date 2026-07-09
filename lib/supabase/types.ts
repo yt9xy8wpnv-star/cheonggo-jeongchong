@@ -113,3 +113,30 @@ export type CommunityReaction = {
   reaction_type: CommunityReactionType;
   created_at: string;
 };
+
+export type CommunityStudyCertification = {
+  id: string;
+  post_id: string;
+  user_id: string;
+  study_date: string;
+  captured_at: string;
+  total_seconds: number;
+  korean_seconds: number;
+  math_seconds: number;
+  english_seconds: number;
+  history_seconds: number;
+  inquiry_1_seconds: number;
+  inquiry_2_seconds: number;
+  second_language_seconds: number;
+  korean_subject: string | null;
+  math_subject: string | null;
+  english_subject: string | null;
+  history_subject: string | null;
+  inquiry_subject_1: string | null;
+  inquiry_subject_2: string | null;
+  second_language_subject: string | null;
+  rank_position: number | null;
+  is_rank_1: boolean;
+  rank_total_users: number | null;
+  created_at: string;
+};

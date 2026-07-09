@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, Clock3, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, Camera, Clock3, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ResetTodayModal } from "@/components/service/ResetTodayModal";
 import { StudyAnalysis } from "@/components/service/StudyAnalysis";
@@ -554,6 +554,13 @@ export function StudyTimerClient() {
               <RefreshCw aria-hidden="true" className="h-4 w-4" />
               새로고침
             </button>
+            <Link
+              href="/community/study/write?from=timer"
+              className="focus-ring inline-flex items-center gap-2 rounded-md border border-brand-blue px-4 py-2.5 text-sm font-black text-brand-blue hover:bg-blue-50"
+            >
+              <Camera aria-hidden="true" className="h-4 w-4" />
+              공부 인증하기
+            </Link>
             <button
               type="button"
               onClick={() => setResetModalOpen(true)}

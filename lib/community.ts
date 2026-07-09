@@ -5,10 +5,12 @@ import type {
   CommunityPostImage,
   CommunityReaction,
   CommunityReactionType,
+  CommunityStudyCertification,
   Profile
 } from "@/lib/supabase/types";
 
 export const freeBoardType = "free";
+export const studyBoardType = "study";
 export const communityImageBucket = "community-images";
 export const maxPostImageCount = 5;
 export const maxPostImageSize = 5 * 1024 * 1024;
@@ -29,6 +31,17 @@ export const communitySortOptions = [
 
 export type CommunitySort = (typeof communitySortOptions)[number]["value"];
 
+export const studySortOptions = [
+  { value: "latest", label: "최신순" },
+  { value: "study-time", label: "공부시간순" },
+  { value: "popular", label: "인기순" },
+  { value: "comments", label: "댓글 많은 순" },
+  { value: "views", label: "조회수 순" },
+  { value: "likes", label: "좋아요 순" }
+] as const;
+
+export type StudySort = (typeof studySortOptions)[number]["value"];
+
 export type CommunityPostListItem = {
   id: string;
   title: string;
@@ -41,6 +54,38 @@ export type CommunityPostListItem = {
   dislike_count: number;
   image_count: number;
   is_pinned: boolean;
+};
+
+export type StudyCertificationView = Pick<
+  CommunityStudyCertification,
+  | "id"
+  | "post_id"
+  | "user_id"
+  | "study_date"
+  | "captured_at"
+  | "total_seconds"
+  | "korean_seconds"
+  | "math_seconds"
+  | "english_seconds"
+  | "history_seconds"
+  | "inquiry_1_seconds"
+  | "inquiry_2_seconds"
+  | "second_language_seconds"
+  | "korean_subject"
+  | "math_subject"
+  | "english_subject"
+  | "history_subject"
+  | "inquiry_subject_1"
+  | "inquiry_subject_2"
+  | "second_language_subject"
+  | "rank_position"
+  | "is_rank_1"
+  | "rank_total_users"
+  | "created_at"
+>;
+
+export type StudyPostListItem = CommunityPostListItem & {
+  certification: StudyCertificationView | null;
 };
 
 export type CommunityPagination = {
@@ -79,6 +124,10 @@ export type CommunityPostDetail = {
   comments: CommunityCommentView[];
 };
 
+export type StudyPostDetail = CommunityPostDetail & {
+  certification: StudyCertificationView | null;
+};
+
 export type CommunityPostsResponse = {
   posts: CommunityPostListItem[];
   pagination: CommunityPagination;
@@ -89,8 +138,26 @@ export type CommunityPostsResponse = {
   sort: CommunitySort;
 };
 
+export type StudyPostsResponse = {
+  posts: StudyPostListItem[];
+  pagination: CommunityPagination;
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  q: string;
+  sort: StudySort;
+};
+
 export type CommunityPostDetailResponse = {
   post: CommunityPostDetail;
+};
+
+export type StudyPostDetailResponse = {
+  post: StudyPostDetail;
+};
+
+export type StudyCertificationPreviewResponse = {
+  certification: StudyCertificationView;
 };
 
 export type CommunityReactionResponse = {
@@ -102,6 +169,12 @@ export type CommunityReactionResponse = {
 export function normalizeCommunitySort(value: string | null): CommunitySort {
   return communitySortOptions.some((option) => option.value === value)
     ? (value as CommunitySort)
+    : "latest";
+}
+
+export function normalizeStudySort(value: string | null): StudySort {
+  return studySortOptions.some((option) => option.value === value)
+    ? (value as StudySort)
     : "latest";
 }
 
@@ -135,6 +208,27 @@ export function validatePostInput(title: string, content: string) {
     return {
       ok: false,
       message: "본문은 2자 이상 5000자 이하로 입력해 주세요."
+    };
+  }
+
+  return { ok: true, message: "" };
+}
+
+export function validateStudyPostInput(title: string, content: string) {
+  const trimmedTitle = title.trim();
+  const trimmedContent = content.trim();
+
+  if (trimmedTitle.length < 2 || trimmedTitle.length > 100) {
+    return {
+      ok: false,
+      message: "제목은 2자 이상 100자 이하로 입력해 주세요."
+    };
+  }
+
+  if (trimmedContent.length < 2 || trimmedContent.length > 200) {
+    return {
+      ok: false,
+      message: "본문은 2자 이상 200자 이하로 입력해 주세요."
     };
   }
 
@@ -310,6 +404,47 @@ export function sortPostsWithCounts(
   });
 }
 
+export function sortStudyPostsWithCounts(
+  posts: StudyPostListItem[],
+  sort: StudySort
+) {
+  const byDate = (a: StudyPostListItem, b: StudyPostListItem) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+
+  return [...posts].sort((a, b) => {
+    if (a.is_pinned !== b.is_pinned) {
+      return a.is_pinned ? -1 : 1;
+    }
+
+    if (sort === "study-time") {
+      return (
+        (b.certification?.total_seconds ?? 0) -
+          (a.certification?.total_seconds ?? 0) || byDate(a, b)
+      );
+    }
+
+    if (sort === "comments") {
+      return b.comment_count - a.comment_count || byDate(a, b);
+    }
+
+    if (sort === "views") {
+      return b.view_count - a.view_count || byDate(a, b);
+    }
+
+    if (sort === "likes") {
+      return b.like_count - a.like_count || byDate(a, b);
+    }
+
+    if (sort === "popular") {
+      const popularA = a.like_count * 3 + a.comment_count * 2 + a.view_count;
+      const popularB = b.like_count * 3 + b.comment_count * 2 + b.view_count;
+      return popularB - popularA || byDate(a, b);
+    }
+
+    return byDate(a, b);
+  });
+}
+
 export function toPostListItem({
   post,
   authorName,
@@ -335,5 +470,32 @@ export function toPostListItem({
     dislike_count: reactionCount.dislike_count,
     image_count: imageCount,
     is_pinned: post.is_pinned
+  };
+}
+
+export function toStudyPostListItem({
+  post,
+  authorName,
+  commentCount,
+  reactionCount,
+  imageCount,
+  certification
+}: {
+  post: CommunityPost;
+  authorName: string;
+  commentCount: number;
+  reactionCount: { like_count: number; dislike_count: number };
+  imageCount: number;
+  certification: StudyCertificationView | null;
+}): StudyPostListItem {
+  return {
+    ...toPostListItem({
+      post,
+      authorName,
+      commentCount,
+      reactionCount,
+      imageCount
+    }),
+    certification
   };
 }

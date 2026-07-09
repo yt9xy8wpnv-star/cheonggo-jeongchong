@@ -67,6 +67,17 @@ Public bucket: on
 
 이미지는 API에서 승인된 회원 요청만 업로드하며, 파일당 5MB 이하 jpg/png/webp/gif만 허용합니다.
 
+## 공부 인증
+
+`/community/study`는 자유게시판과 같은 게시판 UI를 사용하되 `community_posts.board_type = 'study'`로 저장합니다.
+
+- 라우트는 `/community/study`, `/community/study/write`, `/community/study/[id]`, `/community/study/[id]/edit`입니다.
+- 공부 인증은 게시판의 `공부 인증하기` 버튼 또는 정시타이머 페이지의 `공부 인증하기` 버튼에서 작성할 수 있습니다.
+- `community_study_certifications` 테이블에 글 작성 시점의 순공 시간, 과목별 시간, 선택과목, 당시 순위를 snapshot으로 저장합니다.
+- 글 작성 이후 공부 시간이 늘어나도 기존 인증 글의 공부 시간은 바뀌지 않습니다.
+- 인증 당시 1등이면 목록과 인증 카드에 금색 강조가 적용됩니다.
+- 제목은 최대 100자, 본문은 최대 200자입니다.
+
 ## 정시타이머
 
 `/service/timer`는 Supabase의 `study_sessions` 테이블을 사용합니다.

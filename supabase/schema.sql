@@ -158,6 +158,49 @@ create table if not exists public.community_reports (
   )
 );
 
+create table if not exists public.community_study_certifications (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.community_posts(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  study_date date not null,
+  captured_at timestamptz not null default now(),
+  total_seconds integer not null default 0,
+  korean_seconds integer not null default 0,
+  math_seconds integer not null default 0,
+  english_seconds integer not null default 0,
+  history_seconds integer not null default 0,
+  inquiry_1_seconds integer not null default 0,
+  inquiry_2_seconds integer not null default 0,
+  second_language_seconds integer not null default 0,
+  korean_subject text null,
+  math_subject text null,
+  english_subject text null,
+  history_subject text null default '응시',
+  inquiry_subject_1 text null,
+  inquiry_subject_2 text null,
+  second_language_subject text null,
+  rank_position integer null,
+  is_rank_1 boolean not null default false,
+  rank_total_users integer null,
+  created_at timestamptz not null default now(),
+  constraint community_study_certifications_total_check check (total_seconds >= 0),
+  constraint community_study_certifications_subject_total_check check (
+    korean_seconds >= 0
+    and math_seconds >= 0
+    and english_seconds >= 0
+    and history_seconds >= 0
+    and inquiry_1_seconds >= 0
+    and inquiry_2_seconds >= 0
+    and second_language_seconds >= 0
+  ),
+  constraint community_study_certifications_rank_check check (
+    rank_position is null or rank_position > 0
+  ),
+  constraint community_study_certifications_rank_total_check check (
+    rank_total_users is null or rank_total_users >= 0
+  )
+);
+
 create index if not exists study_sessions_user_date_idx
 on public.study_sessions (user_id, study_date);
 
@@ -185,6 +228,15 @@ on public.community_reactions (target_type, target_id);
 
 create index if not exists community_post_images_post_idx
 on public.community_post_images (post_id, order_index);
+
+create index if not exists community_study_certifications_post_idx
+on public.community_study_certifications (post_id);
+
+create index if not exists community_study_certifications_user_date_idx
+on public.community_study_certifications (user_id, study_date);
+
+create index if not exists community_study_certifications_date_idx
+on public.community_study_certifications (study_date);
 
 do $$
 begin
@@ -267,7 +319,7 @@ as $$
 $$;
 
 grant execute on function public.is_username_available(text) to anon, authenticated;
-grant execute on function public.is_admin() to authenticated;
+grant execute on function public.is_admin() to anon, authenticated;
 
 alter table public.profiles enable row level security;
 alter table public.subject_preferences enable row level security;
@@ -277,6 +329,7 @@ alter table public.community_post_images enable row level security;
 alter table public.community_comments enable row level security;
 alter table public.community_reactions enable row level security;
 alter table public.community_reports enable row level security;
+alter table public.community_study_certifications enable row level security;
 
 drop policy if exists profiles_select_self_or_admin on public.profiles;
 create policy profiles_select_self_or_admin
@@ -345,7 +398,13 @@ drop policy if exists community_posts_select_published on public.community_posts
 create policy community_posts_select_published
 on public.community_posts
 for select
-using (status = 'published' or user_id = auth.uid() or public.is_admin());
+using (status = 'published');
+
+drop policy if exists community_posts_select_self_or_admin on public.community_posts;
+create policy community_posts_select_self_or_admin
+on public.community_posts
+for select
+using (user_id = auth.uid() or public.is_admin());
 
 drop policy if exists community_posts_insert_approved_self on public.community_posts;
 create policy community_posts_insert_approved_self
@@ -412,7 +471,13 @@ drop policy if exists community_comments_select_published on public.community_co
 create policy community_comments_select_published
 on public.community_comments
 for select
-using (status = 'published' or user_id = auth.uid() or public.is_admin());
+using (status = 'published');
+
+drop policy if exists community_comments_select_self_or_admin on public.community_comments;
+create policy community_comments_select_self_or_admin
+on public.community_comments
+for select
+using (user_id = auth.uid() or public.is_admin());
 
 drop policy if exists community_comments_insert_approved_self on public.community_comments;
 create policy community_comments_insert_approved_self
@@ -479,6 +544,46 @@ with check (
     from public.profiles
     where id = auth.uid()
       and status = 'approved'
+  )
+);
+
+drop policy if exists community_study_certifications_select_published_post on public.community_study_certifications;
+create policy community_study_certifications_select_published_post
+on public.community_study_certifications
+for select
+using (
+  exists (
+    select 1
+    from public.community_posts
+    where id = post_id
+      and status = 'published'
+  )
+);
+
+drop policy if exists community_study_certifications_select_self_or_admin on public.community_study_certifications;
+create policy community_study_certifications_select_self_or_admin
+on public.community_study_certifications
+for select
+using (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists community_study_certifications_insert_approved_self on public.community_study_certifications;
+create policy community_study_certifications_insert_approved_self
+on public.community_study_certifications
+for insert
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and status = 'approved'
+  )
+  and exists (
+    select 1
+    from public.community_posts
+    where id = post_id
+      and user_id = auth.uid()
+      and board_type = 'study'
   )
 );
 
