@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SubPageHero } from "@/components/common/SubPageHero";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="ko" data-scroll-behavior="smooth">
       <body>
         <Header />
+        <SubPageHero />
         {children}
         <Footer />
       </body>

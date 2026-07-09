@@ -2,16 +2,21 @@
 
 import Link from "next/link";
 import { AlertTriangle, Clock3, RefreshCw, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ResetTodayModal } from "@/components/service/ResetTodayModal";
+import { StudyAnalysis } from "@/components/service/StudyAnalysis";
+import { StudyCalendar } from "@/components/service/StudyCalendar";
 import { StudyRanking } from "@/components/service/StudyRanking";
 import { SubjectTimerRow } from "@/components/service/SubjectTimerRow";
+import { getStudyMonth } from "@/lib/studyDate";
 import { getSupabaseBrowserClient, getSupabaseConfigMessage } from "@/lib/supabase/client";
 import { formatDurationShort, formatSeconds } from "@/lib/time";
 import {
   getLiveActiveElapsedSeconds,
   getLiveSubjectTotals,
   getLiveTotalSeconds,
+  type StudyAnalysisResponse,
+  type StudyCalendarResponse,
   type StudyRankingResponse,
   type StudySubjectOption,
   type StudyTimerMeResponse
@@ -64,6 +69,18 @@ async function apiRequest<T>(
   }
 }
 
+async function fetchStudyStats(token: string, month: string) {
+  const [calendarResult, analysisResult] = await Promise.all([
+    apiRequest<StudyCalendarResponse>(
+      token,
+      `/api/study-timer/calendar?month=${encodeURIComponent(month)}`
+    ),
+    apiRequest<StudyAnalysisResponse>(token, "/api/study-timer/analysis?range=7d")
+  ]);
+
+  return { calendarResult, analysisResult };
+}
+
 function AccessCard({
   title,
   description,
@@ -87,13 +104,18 @@ export function StudyTimerClient() {
   const [authToken, setAuthToken] = useState("");
   const [myTimerData, setMyTimerData] = useState<StudyTimerMeResponse | null>(null);
   const [rankingData, setRankingData] = useState<StudyRankingResponse | null>(null);
+  const [calendarData, setCalendarData] = useState<StudyCalendarResponse | null>(null);
+  const [analysisData, setAnalysisData] = useState<StudyAnalysisResponse | null>(null);
   const [approvalStatus, setApprovalStatus] = useState<ProfileStatus | null>(null);
   const [message, setMessage] = useState("");
   const [busySubject, setBusySubject] = useState("");
   const [resetting, setResetting] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [studyStatsLoading, setStudyStatsLoading] = useState(false);
   const [rankingLoading, setRankingLoading] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const calendarMonthRef = useRef(getStudyMonth(new Date()));
+  const [calendarMonth, setCalendarMonth] = useState(() => getStudyMonth(new Date()));
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -157,6 +179,31 @@ export function StudyTimerClient() {
     [authToken]
   );
 
+  const loadStudyStats = useCallback(
+    async (token = authToken, month = calendarMonthRef.current) => {
+      if (!token) {
+        return;
+      }
+
+      setStudyStatsLoading(true);
+      const { calendarResult, analysisResult } = await fetchStudyStats(token, month);
+      setStudyStatsLoading(false);
+
+      if (calendarResult.ok) {
+        setCalendarData(calendarResult.data);
+      } else {
+        setMessage(calendarResult.message);
+      }
+
+      if (analysisResult.ok) {
+        setAnalysisData(analysisResult.data);
+      } else {
+        setMessage(analysisResult.message);
+      }
+    },
+    [authToken]
+  );
+
   const loadTimer = useCallback(async () => {
     setViewState("loading");
     setMessage("");
@@ -177,18 +224,21 @@ export function StudyTimerClient() {
       setAuthToken("");
       setMyTimerData(null);
       setRankingData(null);
+      setCalendarData(null);
+      setAnalysisData(null);
       setViewState("signed-out");
       return;
     }
 
     setAuthToken(session.access_token);
 
-    const [timerResult, rankingResult] = await Promise.all([
+    const [timerResult, rankingResult, statsResult] = await Promise.all([
       apiRequest<StudyTimerMeResponse>(session.access_token, "/api/study-timer/me"),
       apiRequest<StudyRankingResponse>(
         session.access_token,
         "/api/study-timer/ranking?scope=today"
-      )
+      ),
+      fetchStudyStats(session.access_token, calendarMonthRef.current)
     ]);
 
     if (!timerResult.ok) {
@@ -215,6 +265,16 @@ export function StudyTimerClient() {
 
     setMyTimerData(timerResult.data);
     setRankingData(rankingResult.data);
+    if (statsResult.calendarResult.ok) {
+      setCalendarData(statsResult.calendarResult.data);
+    } else {
+      setMessage(statsResult.calendarResult.message);
+    }
+    if (statsResult.analysisResult.ok) {
+      setAnalysisData(statsResult.analysisResult.data);
+    } else {
+      setMessage(statsResult.analysisResult.message);
+    }
     setViewState("ready");
   }, [loadProfileStatus]);
 
@@ -252,6 +312,18 @@ export function StudyTimerClient() {
       void supabase.removeChannel(channel);
     };
   }, [authToken, loadRanking, viewState]);
+
+  useEffect(() => {
+    if (viewState !== "ready" || !authToken) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void loadStudyStats(authToken, calendarMonth);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [authToken, calendarMonth, loadStudyStats, viewState]);
 
   const liveTimer = useMemo(() => {
     if (!myTimerData) {
@@ -318,6 +390,7 @@ export function StudyTimerClient() {
 
     setMyTimerData(result.data.snapshot);
     void loadRanking();
+    void loadStudyStats();
   };
 
   const handleStop = async () => {
@@ -343,6 +416,7 @@ export function StudyTimerClient() {
 
     setMyTimerData(result.data.snapshot);
     void loadRanking();
+    void loadStudyStats();
   };
 
   const handleResetToday = async () => {
@@ -370,6 +444,12 @@ export function StudyTimerClient() {
     setResetModalOpen(false);
     setMyTimerData(result.data.snapshot);
     void loadRanking();
+    void loadStudyStats();
+  };
+
+  const handleCalendarMonthChange = (month: string) => {
+    calendarMonthRef.current = month;
+    setCalendarMonth(month);
   };
 
   if (viewState === "loading") {
@@ -550,6 +630,23 @@ export function StudyTimerClient() {
         ranking={rankingData}
         now={now}
         loading={rankingLoading}
+      />
+
+      <StudyCalendar
+        data={calendarData}
+        month={calendarMonth}
+        subjectOptions={myTimerData.subject_options}
+        activeSession={myTimerData.active_session}
+        now={now}
+        loading={studyStatsLoading}
+        onMonthChange={handleCalendarMonthChange}
+      />
+
+      <StudyAnalysis
+        data={analysisData}
+        activeSession={myTimerData.active_session}
+        now={now}
+        loading={studyStatsLoading}
       />
 
       <p className="border-t border-brand-line pt-5 text-sm font-semibold leading-7 text-brand-muted">

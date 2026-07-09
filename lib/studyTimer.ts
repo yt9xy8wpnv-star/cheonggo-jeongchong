@@ -55,6 +55,51 @@ export type StudyRankingResponse = {
   users: StudyRankingUser[];
 };
 
+export type StudyCalendarDay = {
+  study_date: string;
+  total_seconds: number;
+  korean_seconds: number;
+  math_seconds: number;
+  english_seconds: number;
+  history_seconds: number;
+  inquiry_1_seconds: number;
+  inquiry_2_seconds: number;
+  second_language_seconds: number;
+  subject_totals_seconds: StudyTotals;
+};
+
+export type StudyCalendarResponse = {
+  month: string;
+  server_now: string;
+  days: StudyCalendarDay[];
+};
+
+export type StudyAnalysisSubject = {
+  subject_key: StudySubjectKey;
+  subject_label: string;
+  subject_choice_label: string;
+  total_seconds: number;
+  percentage: number;
+  enabled: boolean;
+};
+
+export type StudyAnalysisDailyTotal = {
+  study_date: string;
+  total_seconds: number;
+};
+
+export type StudyAnalysisResponse = {
+  start_study_date: string;
+  end_study_date: string;
+  server_now: string;
+  total_seconds: number;
+  average_seconds: number;
+  most_studied_subject: StudyAnalysisSubject | null;
+  least_studied_subject: StudyAnalysisSubject | null;
+  subject_totals: StudyAnalysisSubject[];
+  daily_totals: StudyAnalysisDailyTotal[];
+};
+
 export const studySubjectKeys: StudySubjectKey[] = [
   "korean",
   "math",
@@ -205,4 +250,16 @@ export function getLiveTotalSeconds(
   return activeSession
     ? totalSeconds + getLiveDeltaSeconds(serverNow, now)
     : totalSeconds;
+}
+
+export function getFlatStudyTotals(totals: StudyTotals) {
+  return {
+    korean_seconds: totals.korean,
+    math_seconds: totals.math,
+    english_seconds: totals.english,
+    history_seconds: totals.history,
+    inquiry_1_seconds: totals.inquiry_1,
+    inquiry_2_seconds: totals.inquiry_2,
+    second_language_seconds: totals.second_language
+  };
 }

@@ -96,3 +96,94 @@ export const mainMenuGroups: MainMenuGroup[] = [
     ]
   }
 ];
+
+export type SubPageCategory = {
+  key: string;
+  title: string;
+  href: string;
+  active: string[];
+  items: Array<{
+    title: string;
+    href: string;
+  }>;
+};
+
+const utilitySubPageCategories: SubPageCategory[] = [
+  {
+    key: "alumni",
+    title: "동문회",
+    href: "/alumni",
+    active: ["/alumni"],
+    items: [{ title: "동문회", href: "/alumni" }]
+  },
+  {
+    key: "faq",
+    title: "FAQ",
+    href: "/faq",
+    active: ["/faq"],
+    items: [{ title: "FAQ", href: "/faq" }]
+  },
+  {
+    key: "fund",
+    title: "발전기금",
+    href: "/fund",
+    active: ["/fund"],
+    items: [{ title: "발전기금", href: "/fund" }]
+  },
+  {
+    key: "admission-results",
+    title: "입시 결과",
+    href: "/admission-results",
+    active: ["/admission-results"],
+    items: [{ title: "입시 결과", href: "/admission-results" }]
+  }
+];
+
+export const subPageCategories: SubPageCategory[] = [
+  ...mainMenuGroups.map(({ key, title, href, active, items }) => ({
+    key,
+    title,
+    href,
+    active,
+    items
+  })),
+  ...utilitySubPageCategories
+];
+
+function normalizePathname(pathname: string) {
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
+  }
+
+  return pathname;
+}
+
+export function getSubPageCategory(pathname: string) {
+  const normalizedPathname = normalizePathname(pathname);
+
+  if (normalizedPathname === "/") {
+    return null;
+  }
+
+  return (
+    subPageCategories.find((category) =>
+      category.active.some(
+        (activePath) =>
+          normalizedPathname === activePath ||
+          normalizedPathname.startsWith(`${activePath}/`)
+      )
+    ) ?? null
+  );
+}
+
+export function getSubPageCurrentItem(pathname: string, category: SubPageCategory) {
+  const normalizedPathname = normalizePathname(pathname);
+
+  return (
+    category.items.find((item) => item.href === normalizedPathname) ??
+    (category.key === "notice" && normalizedPathname.startsWith("/notice/")
+      ? { title: "공지 상세", href: normalizedPathname }
+      : null) ??
+    category.items[0]
+  );
+}

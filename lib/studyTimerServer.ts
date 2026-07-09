@@ -2,10 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   addSessionToTotals,
   createEmptyStudyTotals,
+  getFlatStudyTotals,
   getSessionDurationSeconds,
   getStudySubjectOptions,
   getTotalStudySeconds,
+  studySubjectKeys,
   type ActiveStudySession,
+  type StudyAnalysisResponse,
+  type StudyAnalysisSubject,
+  type StudyCalendarDay,
   type StudyRankingUser,
   type StudyTimerMeResponse
 } from "@/lib/studyTimer";
@@ -95,6 +100,32 @@ export async function fetchTodayStudySessions(
     return {
       data: null,
       error: "랭킹 기록을 불러오지 못했습니다.",
+      status: 500
+    };
+  }
+
+  return { data: (data ?? []) as StudySession[], error: null, status: 200 };
+}
+
+export async function fetchUserStudySessionsRange(
+  client: SupabaseClient,
+  userId: string,
+  startStudyDate: string,
+  endStudyDate: string
+): Promise<StudyTimerResult<StudySession[]>> {
+  const { data, error } = await client
+    .from("study_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("study_date", startStudyDate)
+    .lte("study_date", endStudyDate)
+    .order("study_date", { ascending: true })
+    .order("started_at", { ascending: true });
+
+  if (error) {
+    return {
+      data: null,
+      error: "공부 기록을 불러오지 못했습니다.",
       status: 500
     };
   }
@@ -240,6 +271,107 @@ export function buildStudyRankingUsers(
       ...user,
       rank: index + 1
     }));
+}
+
+export function buildStudyCalendarDays(
+  days: string[],
+  sessions: StudySession[],
+  now: Date
+): StudyCalendarDay[] {
+  const totalsByDate = new Map<string, ReturnType<typeof createEmptyStudyTotals>>();
+
+  days.forEach((day) => {
+    totalsByDate.set(day, createEmptyStudyTotals());
+  });
+
+  sessions.forEach((session) => {
+    const totals = totalsByDate.get(session.study_date);
+
+    if (!totals) {
+      return;
+    }
+
+    addSessionToTotals(totals, session, now);
+  });
+
+  return days.map((day) => {
+    const totals = totalsByDate.get(day) ?? createEmptyStudyTotals();
+
+    return {
+      study_date: day,
+      total_seconds: getTotalStudySeconds(totals),
+      ...getFlatStudyTotals(totals),
+      subject_totals_seconds: totals
+    };
+  });
+}
+
+export function buildStudyAnalysisResponse({
+  subjects,
+  sessions,
+  dailyDates,
+  startStudyDate,
+  endStudyDate,
+  now
+}: {
+  subjects: SubjectPreferenceInput;
+  sessions: StudySession[];
+  dailyDates: string[];
+  startStudyDate: string;
+  endStudyDate: string;
+  now: Date;
+}): StudyAnalysisResponse {
+  const subjectOptions = getStudySubjectOptions(subjects);
+  const subjectTotals = createEmptyStudyTotals();
+  const dailyTotals = new Map<string, number>();
+
+  dailyDates.forEach((date) => dailyTotals.set(date, 0));
+
+  sessions.forEach((session) => {
+    const duration = getSessionDurationSeconds(session, now);
+    subjectTotals[session.subject_key] += duration;
+    dailyTotals.set(session.study_date, (dailyTotals.get(session.study_date) ?? 0) + duration);
+  });
+
+  const totalSeconds = getTotalStudySeconds(subjectTotals);
+  const subjectRows: StudyAnalysisSubject[] = studySubjectKeys.map((key) => {
+    const option = subjectOptions.find((subjectOption) => subjectOption.key === key);
+    const subjectSeconds = subjectTotals[key];
+
+    return {
+      subject_key: key,
+      subject_label: option?.title ?? key,
+      subject_choice_label: option?.label ?? "",
+      total_seconds: subjectSeconds,
+      percentage: totalSeconds > 0 ? Math.round((subjectSeconds / totalSeconds) * 100) : 0,
+      enabled: option?.enabled ?? false
+    };
+  });
+
+  const enabledSubjects = subjectRows.filter((subject) => subject.enabled);
+  const mostStudiedSubject =
+    enabledSubjects.length > 0
+      ? [...enabledSubjects].sort((a, b) => b.total_seconds - a.total_seconds)[0]
+      : null;
+  const leastStudiedSubject =
+    enabledSubjects.length > 0
+      ? [...enabledSubjects].sort((a, b) => a.total_seconds - b.total_seconds)[0]
+      : null;
+
+  return {
+    start_study_date: startStudyDate,
+    end_study_date: endStudyDate,
+    server_now: now.toISOString(),
+    total_seconds: totalSeconds,
+    average_seconds: Math.floor(totalSeconds / Math.max(dailyDates.length, 1)),
+    most_studied_subject: mostStudiedSubject ?? null,
+    least_studied_subject: leastStudiedSubject ?? null,
+    subject_totals: subjectRows,
+    daily_totals: dailyDates.map((studyDate) => ({
+      study_date: studyDate,
+      total_seconds: dailyTotals.get(studyDate) ?? 0
+    }))
+  };
 }
 
 export async function stopActiveStudySessions(
