@@ -68,3 +68,17 @@ export async function requireApprovedAdminFromRequest(request: Request) {
 
   return context;
 }
+
+export async function requireApprovedUserFromRequest(request: Request) {
+  const context = await getProfileFromAuthHeader(request);
+
+  if (!context.profile || context.profile.status !== "approved") {
+    return {
+      ...context,
+      error: context.error ?? "승인된 회원만 접근할 수 있습니다.",
+      status: context.status === 200 ? 403 : context.status
+    };
+  }
+
+  return context;
+}

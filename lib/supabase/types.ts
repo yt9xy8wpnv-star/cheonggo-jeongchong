@@ -36,3 +36,25 @@ export type SignupRequest = {
   profile: Profile;
   subjects: SubjectPreferences | null;
 };
+
+export type StudySubjectKey =
+  | "korean"
+  | "math"
+  | "english"
+  | "history"
+  | "inquiry_1"
+  | "inquiry_2"
+  | "second_language";
+
+export type StudySession = {
+  id: string;
+  user_id: string;
+  study_date: string;
+  subject_key: StudySubjectKey;
+  subject_label: string;
+  started_at: string;
+  ended_at: string | null;
+  duration_seconds: number | null;
+  created_at: string;
+  updated_at: string;
+};

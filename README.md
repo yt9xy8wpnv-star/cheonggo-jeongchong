@@ -43,7 +43,19 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 `SUPABASE_SERVICE_ROLE_KEY`는 서버 라우트에서만 사용하며 클라이언트 컴포넌트에 노출하지 않습니다.
 
-Supabase SQL Editor에서 `supabase/schema.sql`을 실행해 `profiles`, `subject_preferences`, RLS 정책, RPC 함수를 생성합니다.
+Supabase SQL Editor에서 `supabase/schema.sql`을 실행해 `profiles`, `subject_preferences`, `study_sessions`, RLS 정책, RPC 함수를 생성합니다.
+
+## 정시타이머
+
+`/service/timer`는 Supabase의 `study_sessions` 테이블을 사용합니다.
+
+- 공부 날짜인 `study_date`는 한국 시간 오전 5시를 기준으로 계산합니다.
+- 타이머는 매초 DB에 저장하지 않습니다. 시작 시 `started_at`을 저장하고, 정지 시 `ended_at`과 `duration_seconds`를 저장합니다.
+- 진행 중인 타이머는 `started_at`과 현재 시각 차이를 화면에서만 1초마다 계산합니다.
+- 오늘 랭킹은 완료된 세션과 진행 중 세션을 함께 집계합니다.
+- `study_sessions`는 Supabase Realtime INSERT/UPDATE 이벤트를 구독해 다른 사용자의 시작, 정지, 전환 시 랭킹을 다시 불러옵니다.
+
+배포 전 Supabase SQL Editor에서 최신 `supabase/schema.sql`을 다시 실행해 `study_sessions` 테이블과 Realtime 발행 설정을 적용해야 합니다.
 
 ## 초기 관리자 계정 설정
 
