@@ -5,6 +5,7 @@ import { Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { SubjectPreferenceForm } from "@/components/auth/SubjectPreferenceForm";
 import { getSupabaseBrowserClient, getSupabaseConfigMessage } from "@/lib/supabase/client";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import { defaultSubjectPreferences } from "@/lib/subjects";
 import { validateSubjectPreferences } from "@/lib/subjectValidation";
 import type { Profile, SubjectPreferenceInput, SubjectPreferences } from "@/lib/supabase/types";
@@ -117,7 +118,7 @@ export function SubjectsEditor() {
           승인된 회원만 선택과목을 수정할 수 있습니다.
         </p>
         <Link
-          href="/login"
+          href={getLoginRedirectHref("/mypage/profile")}
           className="focus-ring mt-5 inline-flex rounded-md bg-brand-blue px-5 py-3 text-sm font-black text-white hover:bg-brand-deep"
         >
           로그인

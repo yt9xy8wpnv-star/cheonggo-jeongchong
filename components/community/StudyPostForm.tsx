@@ -9,6 +9,7 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } fro
 import { CommunityNoticeCard } from "@/components/community/CommunityNoticeCard";
 import { StudyCertificationCard } from "@/components/community/StudyCertificationCard";
 import { useCommunityAuth } from "@/components/community/useCommunityAuth";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import {
   allowedPostImageTypes,
   isAllowedImageFile,
@@ -23,6 +24,7 @@ import type { CommunityPostImage } from "@/lib/supabase/types";
 type StudyPostFormProps = {
   mode: "create" | "edit";
   postId?: string;
+  redirectPath?: string;
 };
 
 type PendingImage = {
@@ -82,7 +84,7 @@ function buildPreviewCertification(
   };
 }
 
-export function StudyPostForm({ mode, postId }: StudyPostFormProps) {
+export function StudyPostForm({ mode, postId, redirectPath }: StudyPostFormProps) {
   const router = useRouter();
   const auth = useCommunityAuth();
   const [title, setTitle] = useState("");
@@ -328,7 +330,11 @@ export function StudyPostForm({ mode, postId }: StudyPostFormProps) {
           <CommunityNoticeCard
             title="로그인 후 작성할 수 있습니다"
             description="청고정총 계정으로 로그인하면 공부 인증 글을 작성할 수 있습니다."
-            actionHref="/login"
+            actionHref={getLoginRedirectHref(
+              mode === "edit" && postId
+                ? `/community/study/${postId}/edit`
+                : redirectPath ?? "/community/study/write"
+            )}
             actionLabel="로그인"
           />
         </section>

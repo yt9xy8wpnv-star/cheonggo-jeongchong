@@ -11,7 +11,7 @@ import {
 import { validateSubjectPreferences } from "@/lib/subjectValidation";
 import type { SubjectPreferenceInput } from "@/lib/supabase/types";
 
-const usernamePattern = /^[a-z0-9_]{3,32}$/;
+const usernamePattern = /^[a-z0-9_]{2,32}$/;
 
 type SignupBody = {
   username?: string;
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
   if (!usernamePattern.test(username)) {
     return NextResponse.json(
-      { message: "아이디는 영문 소문자, 숫자, 밑줄을 사용해 3~32자로 입력해 주세요." },
+      { message: "아이디는 영문 소문자, 숫자, 밑줄을 사용해 2~32자로 입력해 주세요." },
       { status: 400 }
     );
   }

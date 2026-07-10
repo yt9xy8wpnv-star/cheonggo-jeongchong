@@ -22,6 +22,7 @@ import {
 } from "@/components/community/QnaImageUploader";
 import { QnaStatusBadge } from "@/components/community/QnaStatusBadge";
 import { useCommunityAuth } from "@/components/community/useCommunityAuth";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import {
   validateQnaAnswerInput,
   type QnaAnswerView,
@@ -614,7 +615,19 @@ export function QnaQuestionDetail({ postId }: QnaQuestionDetailProps) {
             </form>
           ) : (
             <div className="mt-5 rounded-lg border border-brand-line bg-slate-50 px-4 py-4 text-sm font-bold text-brand-muted">
-              {auth.status === "approval" ? auth.message : "답변 작성은 로그인 후 가능합니다."}
+              <p>
+                {auth.status === "approval"
+                  ? auth.message
+                  : "답변 작성은 로그인 후 가능합니다."}
+              </p>
+              {auth.status === "signed-out" ? (
+                <Link
+                  href={getLoginRedirectHref(`/community/qna/${postId}`)}
+                  className="focus-ring mt-3 inline-flex rounded-md bg-brand-blue px-4 py-2 text-xs font-black text-white hover:bg-brand-deep"
+                >
+                  로그인
+                </Link>
+              ) : null}
             </div>
           )}
 

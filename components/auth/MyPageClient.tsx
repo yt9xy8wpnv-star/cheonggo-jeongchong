@@ -13,6 +13,7 @@ import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/common/Badge";
 import { getSupabaseBrowserClient, getSupabaseConfigMessage } from "@/lib/supabase/client";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import { formatSubjectSummary } from "@/lib/subjects";
 import type { Profile, SubjectPreferenceInput, SubjectPreferences } from "@/lib/supabase/types";
 
@@ -150,7 +151,7 @@ export function MyPageClient() {
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              href="/login"
+              href={getLoginRedirectHref("/mypage")}
               className="focus-ring rounded-md bg-brand-blue px-5 py-3 text-sm font-black text-white hover:bg-brand-deep"
             >
               로그인
@@ -229,10 +230,10 @@ export function MyPageClient() {
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link
-            href="/mypage/subjects"
+            href="/mypage/profile"
             className="focus-ring rounded-md bg-brand-blue px-4 py-3 text-sm font-black text-white hover:bg-brand-deep"
           >
-            선택과목 수정
+            내 정보 수정
           </Link>
           <button
             type="button"

@@ -8,6 +8,7 @@ import { ArrowLeft, ImagePlus, Trash2, X } from "lucide-react";
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { CommunityNoticeCard } from "@/components/community/CommunityNoticeCard";
 import { useCommunityAuth } from "@/components/community/useCommunityAuth";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import {
   allowedPostImageTypes,
   isAllowedImageFile,
@@ -235,7 +236,11 @@ export function PostForm({ mode, postId }: PostFormProps) {
           <CommunityNoticeCard
             title="로그인 후 작성할 수 있습니다"
             description="청고정총 계정으로 로그인하면 자유게시판 글을 작성할 수 있습니다."
-            actionHref="/login"
+            actionHref={getLoginRedirectHref(
+              mode === "edit" && postId
+                ? `/community/free/${postId}/edit`
+                : "/community/free/write"
+            )}
             actionLabel="로그인"
           />
         </section>

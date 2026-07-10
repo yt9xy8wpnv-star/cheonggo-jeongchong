@@ -18,6 +18,7 @@ import {
   validatePoliceAccusedName,
   validatePoliceDetail
 } from "@/lib/police";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import type { PoliceReportType } from "@/lib/supabase/types";
 
 type ReportMutationPayload = {
@@ -366,7 +367,7 @@ export function PoliceReportClient() {
         <CommunityNoticeCard
           title="로그인 후 이용할 수 있습니다"
           description="정시파출소 신고 접수는 승인된 회원만 가능합니다."
-          actionHref="/login"
+          actionHref={getLoginRedirectHref("/service/police")}
           actionLabel="로그인"
         />
       );
@@ -386,7 +387,7 @@ export function PoliceReportClient() {
         <CommunityNoticeCard
           title="회원 정보를 확인하지 못했습니다"
           description={auth.message || "다시 로그인한 뒤 이용해 주세요."}
-          actionHref="/login"
+          actionHref={getLoginRedirectHref("/service/police")}
           actionLabel="로그인"
         />
       );
@@ -429,22 +430,22 @@ export function PoliceReportClient() {
 
   return (
     <main className="bg-white">
-      <section className="border-b border-brand-line bg-brand-deep text-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <p className="text-sm font-bold text-blue-100">Jeongsi Police</p>
-          <h1 className="mt-3 text-4xl font-black tracking-normal sm:text-5xl">
+      <section className="mx-auto max-w-7xl px-4 pb-12 pt-10 sm:px-6 lg:px-8">
+        <div className="border-b border-brand-line pb-8">
+          <p className="text-sm font-bold text-brand-blue">Jeongsi Police</p>
+          <h1 className="mt-2 text-3xl font-black text-brand-ink sm:text-4xl">
             정시파출소
           </h1>
-          <p className="mt-5 max-w-2xl text-base leading-8 text-blue-50">
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-brand-muted">
             청고정총 질서 유지를 위한 신고 및 제보를 접수합니다.
           </p>
-          <p className="mt-2 text-sm font-bold text-blue-100">
+          <p className="mt-2 text-sm font-bold text-slate-500">
             접수된 신고는 운영진 검토 후 처리됩니다.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
         <ReportTypeSelector selectedType={selectedType} onSelect={handleSelectType} />
         <div className="mt-8">{renderForm()}</div>
       </section>

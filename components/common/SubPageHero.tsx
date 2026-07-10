@@ -125,7 +125,7 @@ export function SubPageHero() {
 
       <div className="mx-auto flex min-h-[240px] max-w-7xl flex-col justify-center px-4 py-14 sm:min-h-[280px] sm:px-6 lg:min-h-[340px] lg:px-8">
         <h1 className="text-3xl font-black tracking-normal text-white sm:text-4xl lg:text-5xl">
-          {category.title}
+          {currentItem.heroTitle ?? category.title}
         </h1>
 
         <nav aria-label="현재 위치" className="mt-6">

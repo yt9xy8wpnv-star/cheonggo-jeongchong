@@ -17,6 +17,7 @@ import { CommunityNoticeCard } from "@/components/community/CommunityNoticeCard"
 import { formatCommunityDate } from "@/components/community/communityFormat";
 import { QnaStatusBadge } from "@/components/community/QnaStatusBadge";
 import { useCommunityAuth } from "@/components/community/useCommunityAuth";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import {
   normalizePage,
   normalizeQnaSort,
@@ -198,7 +199,7 @@ export function QnaBoardList() {
               </span>
             ) : (
               <Link
-                href="/login"
+                href={getLoginRedirectHref("/community/qna/write")}
                 className="focus-ring inline-flex items-center gap-2 rounded-md border border-brand-blue px-5 py-3 text-sm font-black text-brand-blue hover:bg-blue-50"
               >
                 <Pencil aria-hidden="true" className="h-4 w-4" />

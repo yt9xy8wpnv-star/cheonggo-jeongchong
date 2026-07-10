@@ -11,6 +11,7 @@ import {
 } from "@/components/community/QnaImageUploader";
 import { QnaSubjectSelect } from "@/components/community/QnaSubjectSelect";
 import { useCommunityAuth } from "@/components/community/useCommunityAuth";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import {
   validateQnaQuestionInput,
   type QnaPostDetailResponse
@@ -181,7 +182,11 @@ export function QnaQuestionForm({ mode, postId }: QnaQuestionFormProps) {
           <CommunityNoticeCard
             title="로그인 후 질문할 수 있습니다"
             description="청고정총 계정으로 로그인하면 질문 게시판을 이용할 수 있습니다."
-            actionHref="/login"
+            actionHref={getLoginRedirectHref(
+              mode === "edit" && postId
+                ? `/community/qna/${postId}/edit`
+                : "/community/qna/write"
+            )}
             actionLabel="로그인"
           />
         </section>

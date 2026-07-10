@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { normalizeUsername } from "@/lib/auth";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const usernamePattern = /^[a-z0-9_]{3,32}$/;
+const usernamePattern = /^[a-z0-9_]{2,32}$/;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         available: false,
-        message: "아이디는 영문 소문자, 숫자, 밑줄을 사용해 3~32자로 입력해 주세요."
+        message: "아이디는 영문 소문자, 숫자, 밑줄을 사용해 2~32자로 입력해 주세요."
       },
       { status: 400 }
     );

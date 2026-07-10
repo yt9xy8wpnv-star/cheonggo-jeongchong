@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { useState } from "react";
 import { FormField } from "@/components/common/FormField";
 import { getSupabaseBrowserClient, getSupabaseConfigMessage } from "@/lib/supabase/client";
 import { usernameToInternalEmail } from "@/lib/auth";
+import { getSafeRedirectPath } from "@/lib/redirect";
 import type { Profile } from "@/lib/supabase/types";
 
 type LoginState = {
@@ -21,6 +22,8 @@ const initialLoginState: LoginState = {
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = getSafeRedirectPath(searchParams.get("redirect"));
   const [form, setForm] = useState(initialLoginState);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -90,7 +93,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/mypage");
+    router.push(redirectPath);
     router.refresh();
   };
 

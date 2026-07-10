@@ -116,12 +116,6 @@ export function Header() {
             />
           </Link>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <Link
-              href={account.href}
-              className="focus-ring hidden rounded-md px-3 py-2 text-xs font-bold text-slate-600 hover:text-brand-blue sm:inline-flex"
-            >
-              {account.signedIn ? account.label : "로그인"}
-            </Link>
             <button
               type="button"
               aria-label="알림"
@@ -136,13 +130,23 @@ export function Header() {
             >
               <Search aria-hidden="true" className="h-5 w-5" />
             </button>
-            <Link
-              href="/mypage"
-              aria-label={account.signedIn ? "마이페이지" : "프로필"}
-              className="focus-ring hidden h-10 w-10 items-center justify-center rounded-md text-slate-800 hover:bg-slate-50 sm:flex"
-            >
-              <UserCircle aria-hidden="true" className="h-5 w-5" />
-            </Link>
+            {account.signedIn ? (
+              <Link
+                href="/mypage"
+                aria-label="마이페이지"
+                className="focus-ring inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-black text-slate-800 hover:bg-slate-50 hover:text-brand-blue sm:px-3"
+              >
+                <UserCircle aria-hidden="true" className="h-5 w-5" />
+                <span className="hidden max-w-24 truncate sm:inline">{account.label}</span>
+              </Link>
+            ) : (
+              <Link
+                href={account.href}
+                className="focus-ring inline-flex rounded-md px-2 py-2 text-xs font-black text-slate-700 hover:bg-slate-50 hover:text-brand-blue sm:px-3"
+              >
+                로그인
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => setOpen(true)}

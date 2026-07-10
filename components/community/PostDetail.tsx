@@ -9,6 +9,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CommunityNoticeCard } from "@/components/community/CommunityNoticeCard";
 import { formatCommunityDateTime } from "@/components/community/communityFormat";
 import { useCommunityAuth } from "@/components/community/useCommunityAuth";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import {
   validateCommentInput,
   type CommunityPostDetail as CommunityPostDetailType,
@@ -452,9 +453,19 @@ export function PostDetail({ postId }: PostDetailProps) {
             </form>
           ) : (
             <div className="mt-5 rounded-lg border border-brand-line bg-slate-50 px-4 py-4 text-sm font-bold text-brand-muted">
-              {auth.status === "approval"
-                ? auth.message
-                : "댓글 작성은 로그인 후 가능합니다."}
+              <p>
+                {auth.status === "approval"
+                  ? auth.message
+                  : "댓글 작성은 로그인 후 가능합니다."}
+              </p>
+              {auth.status === "signed-out" ? (
+                <Link
+                  href={getLoginRedirectHref(`/community/free/${postId}`)}
+                  className="focus-ring mt-3 inline-flex rounded-md bg-brand-blue px-4 py-2 text-xs font-black text-white hover:bg-brand-deep"
+                >
+                  로그인
+                </Link>
+              ) : null}
             </div>
           )}
 

@@ -9,6 +9,7 @@ import { StudyCalendar } from "@/components/service/StudyCalendar";
 import { StudyRanking } from "@/components/service/StudyRanking";
 import { SubjectTimerRow } from "@/components/service/SubjectTimerRow";
 import { getStudyMonth } from "@/lib/studyDate";
+import { getLoginRedirectHref } from "@/lib/redirect";
 import { getSupabaseBrowserClient, getSupabaseConfigMessage } from "@/lib/supabase/client";
 import { formatDurationShort, formatSeconds } from "@/lib/time";
 import {
@@ -473,7 +474,7 @@ export function StudyTimerClient() {
         actions={
           <>
             <Link
-              href="/login"
+              href={getLoginRedirectHref("/service/timer")}
               className="focus-ring rounded-md bg-brand-blue px-5 py-3 text-sm font-black text-white hover:bg-brand-deep"
             >
               로그인

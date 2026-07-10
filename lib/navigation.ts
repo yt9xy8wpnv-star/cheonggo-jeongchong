@@ -7,6 +7,7 @@ export type MainMenuGroup = {
   items: Array<{
     title: string;
     href: string;
+    heroTitle?: string;
   }>;
 };
 
@@ -23,10 +24,12 @@ export const mainMenuGroups: MainMenuGroup[] = [
     title: "단체소개",
     description: "청고정총의 목적, 조직, 위치 정보를 확인할 수 있습니다.",
     href: "/about",
-    active: ["/about", "/leader", "/organization", "/location"],
+    active: ["/about", "/leader", "/vision", "/symbol", "/organization", "/location"],
     items: [
       { title: "청고정총 소개", href: "/about" },
       { title: "대표 소개", href: "/leader" },
+      { title: "정총 비전", href: "/vision" },
+      { title: "정총 상징", href: "/symbol", heroTitle: "정총 상징" },
       { title: "조직도", href: "/organization" },
       { title: "오시는 길", href: "/location" }
     ]
@@ -85,12 +88,12 @@ export const mainMenuGroups: MainMenuGroup[] = [
   {
     key: "mypage",
     title: "마이페이지",
-    description: "개인 페이지, 선택과목, 가입 관리, 관리자 화면으로 이동합니다.",
+    description: "개인 페이지, 내 정보 수정, 가입 관리, 관리자 화면으로 이동합니다.",
     href: "/mypage",
     active: ["/mypage", "/admin"],
     items: [
       { title: "마이페이지 홈", href: "/mypage" },
-      { title: "선택과목 수정", href: "/mypage/subjects" },
+      { title: "내 정보 수정", href: "/mypage/profile" },
       { title: "회원가입 관리", href: "/mypage/admin/signup-requests" },
       { title: "관리자", href: "/admin" }
     ]
@@ -105,6 +108,7 @@ export type SubPageCategory = {
   items: Array<{
     title: string;
     href: string;
+    heroTitle?: string;
   }>;
 };
 

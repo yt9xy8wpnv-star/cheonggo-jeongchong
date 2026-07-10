@@ -286,7 +286,7 @@ export function normalizePageSize(value: string | null) {
   const pageSize = Number(value);
 
   if (!Number.isInteger(pageSize)) {
-    return 10;
+    return 20;
   }
 
   return Math.min(Math.max(pageSize, 1), 20);
