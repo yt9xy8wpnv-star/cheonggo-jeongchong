@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { numberStats } from "@/lib/data";
 
 export function NumbersSection() {
@@ -48,7 +50,17 @@ export function NumbersSection() {
           ))}
         </div>
 
-        <div className="mt-14 flex justify-center gap-3">
+        <div className="mt-14 flex justify-center">
+          <Link
+            href="/admission-results"
+            className="focus-ring inline-flex items-center gap-2 rounded-md border border-white/35 bg-white px-5 py-3 text-sm font-black text-brand-deep hover:bg-sky-50"
+          >
+            입시 결과 자세히 보기
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="mt-8 flex justify-center gap-3">
           <span className="h-2.5 w-12 rounded-full bg-white" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/45" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/45" />
